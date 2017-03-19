@@ -1,0 +1,14 @@
+{
+  "name": "sbot",
+  "version": "2.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node . --harmony_array_includes --harmony_object_observe"
+  },
+  "main": "app.js",
+  "dependencies": {
+    "colors": "latest",
+    "node-vkapi": "latest",
+    "request": "latest"
+  }
+}

@@ -1,0 +1,1 @@
+https://oauth.vk.com/authorize?client_id=5870598&scope=docs, friends, photos, audio, video, status, messages, wall, offline, account, groups&display=mobile&redirect_uri=blank.html&response_type=token&v=5.62

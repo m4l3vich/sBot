@@ -1,7 +1,7 @@
 process.stdout.setEncoding('utf8');
 const greet = [
     '+-------------------------+',
-    '|   sBot v2.0.0 Cerium    |',
+    '|   sBot v2.0.1 Cerium    |',
     '|  by m4l3vich, (c) 2017  |',
     '+-------------------------+',
     ''
@@ -83,7 +83,7 @@ const bot = {
         //Online loop
         console.log('[init]'.green,' Запущен цикл установки онлайна');
         VK.call('account.setOnline');
-        setInterval(function(){il.setOnline()}, 600000);
+        setInterval(function(){VK.call('account.setOnline')}, 600000);
     },
     sendmsg(type, id, msg, attach, callback){
         if (type == 'conv') {id = id + 2000000000}

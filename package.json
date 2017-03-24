@@ -12,14 +12,13 @@
   },
   "keywords": ["бот", "вк", "вконтакте"],
   "author": "m4l3vich",
-  "license": "ISC",
+  "license": "MPL-2.0",
   "bugs": {
     "url": "https://github.com/m4l3vich/sBot/issues"
   },
   "homepage": "https://github.com/m4l3vich/sBot#readme",
   "dependencies": {
     "colors": "latest",
-    "node-vkapi": "latest",
     "request": "latest"
   }
 }

@@ -145,6 +145,7 @@ const il = {
             VK.call('users.get', {user_ids: userid}, function(res){
                 cache[userid] = [res[0].first_name, res[0].last_name];
                 console.log('[cache] Пользователь', userid, 'кэширован');
+                fs.writeFile('cache.json', cache, null);
                 if(isConv){result = {id: userid, fname: res[0].first_name, lname: res[0].last_name};}
                 else{result = {fname: res[0].first_name, lname: res[0].last_name};}
                 callback(result);
@@ -166,7 +167,7 @@ const il = {
             }
             else if(il.isWriting(answer.updates)){il.longpollLoop({key: info.key, server: info.server, ts: answer.ts})}
             else{
-                il.parselp(answer.updates,function(obj){console.log('[msg] Получено [<=] %s'.blue,il.lpmask(obj));});
+                il.parselp(answer.updates,function(obj){console.log('[msg] Получено [<=] %s'.yellow,il.lpmask(obj));});
                 il.longpollLoop({key: info.key, server: info.server, ts: answer.ts})
             }
         })

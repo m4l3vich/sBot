@@ -1,7 +1,7 @@
 process.stdout.setEncoding('utf8');
 const greet = [
     '+-------------------------+',
-    '|   sBot v2.0.1 Cerium    |',
+    '|   sBot v2.0.2 Cerium    |',
     '|  by m4l3vich, (c) 2017  |',
     '+-------------------------+',
     ''
@@ -12,14 +12,12 @@ const fs = require('fs');
 const VKApi = require('node-vkapi');
 const colors = require('colors');
 const r = require('request');
+const VK = require('./api');
 var cache = {};
 var authid = '';
 var sentid = '';
 var botname = [];
 console.log(greet.join('\n').green);
-const VK = new VKApi({
-    app: {id: 5870598}
-});
 
 var dict = {
     c:{},
@@ -64,32 +62,40 @@ const bot = {
     },
     getAnswer(peer){return '[id'+peer.s.id+'|'+peer.s.fname+'], ';},
     init(name, token, captcha){
-        VK.options.token = token;
+        if(captcha){o = captcha}else{o = null}
+        VK.init(token, o)
         botname = name;
         //Authorize user
         console.log('[init]'.green,' Получение информации об аккаунте...');
-        VK.call('users.get', null)
-            .then(res => {userinfo = [res[0].id, res[0].first_name, res[0].last_name];
+        VK.call('users.get', {}, function(res){
+          userinfo = [res[0].id, res[0].first_name, res[0].last_name];
                 console.log('[init]'.green,' Авторизация успешна, ID:',userinfo[0]);});
         //Set status
         VK.call('status.set', {text: greet[1], group_id: 0});
         //Load cache and initialize cache watcher
         console.log('[init]'.green,' Загрузка кэша пользователей...');
-        fs.readFile('cache.json', 'utf-8', function(err, file){cache = JSON.parse(file);
-            console.log('[init]'.green,' Загружено',Object.keys(cache).length,'пользователей из кэша');});
+        fs.access('cache.json', fs.constants.F_OK, function(err){
+          if(err){
+            fs.writeFile('cache.json', '{\n}', function(err){if(err){console.log('[init]'.red,' Ошибка при создании файла кэша')}
+                else{console.log('[init]'.green,' Создан файл кэша')}})
+          }else{
+            fs.readFile('cache.json', 'utf-8', function(err, file){cache = JSON.parse(file);
+                console.log('[init]'.green,' Загружено',Object.keys(cache).length,'пользователей из кэша');});
+          }
+        });
         //Initialize LongPoll connection
-        VK.call('messages.getLongPollServer', {use_ssl: 1}).then(res => {
+        VK.call('messages.getLongPollServer', {use_ssl: 1}, function(res){
             console.log('[init]'.green,' Запущен цикл LongPoll');il.longpollLoop(res);});
         //Online loop
         console.log('[init]'.green,' Запущен цикл установки онлайна');
-        VK.call('account.setOnline');
+        VK.call('account.setOnline', {});
         setInterval(function(){VK.call('account.setOnline')}, 600000);
     },
     sendmsg(type, id, msg, attach, callback){
         if (type == 'conv') {id = id + 2000000000}
         if (attach) {obj = {peer_id: id, message: msg, attachment: attach}}
         else {obj = {peer_id: id, message: msg}}
-        VK.call('messages.send', obj).then(res => {
+        VK.call('messages.send', obj, function(res){
             if (res.error) {
                 switch (res.error.error_code) {
                     case 902:console.log('[msg] Ошибка отправки пользователю %s: Запрещено настройками приватности'.red, id);break;
@@ -136,7 +142,7 @@ const il = {
         if(cache[userid] && isConv) {result = {id: userid, fname: cache[userid][0], lname: cache[userid][1]};callback(result);
         }else if(cache[userid] && !isConv){result = {fname: cache[userid][0], lname: cache[userid][1]};callback(result);
         }else {
-            VK.call('users.get', {user_ids: userid}).then(res => {
+            VK.call('users.get', {user_ids: userid}, function(res){
                 cache[userid] = [res[0].first_name, res[0].last_name];
                 console.log('[cache] Пользователь', userid, 'кэширован');
                 if(isConv){result = {id: userid, fname: res[0].first_name, lname: res[0].last_name};}
@@ -155,7 +161,7 @@ const il = {
             if(answer.updates && answer.updates.length == 0){il.longpollLoop({key: info.key, server: info.server, ts: answer.ts})}
             else if(answer.failed == 1){il.longpollLoop({key: info.key, server: info.server, ts: answer.ts})}
             else if(answer.failed == 2 || answer.failed == 3){
-                VK.call('messages.getLongPollServer', {use_ssl: 1}).then(res => {
+                VK.call('messages.getLongPollServer', {use_ssl: 1}, function(res){
                     console.log('[init]'.green,' Цикл LongPoll перезапущен с новым ключом');il.longpollLoop(res);});
             }
             else if(il.isWriting(answer.updates)){il.longpollLoop({key: info.key, server: info.server, ts: answer.ts})}
@@ -168,16 +174,13 @@ const il = {
     parse(msgobj){
         cmd = msgobj.msg.split(' ');
         function ch4name(){
-            if(botname.includes(cmd[0].toLowerCase().slice(0, cmd[0].indexOf(',')))){return true;}
-            else return !!botname.includes(cmd[0].toLowerCase());
+            return botname.includes(cmd[0]);
         }
-        if(cmd.length != 1){
-            if(msgobj.type == 'conv') {
-                if (ch4name() && cmds.check(cmd[1], msgobj))
-                    if (ch4name() && dict.check(cmd.slice(1, cmd.length).join(' '))) {
-                        bot.sendmsg('conv', msgobj.id, bot.getAnswer(msgobj) + dict.check(cmd.slice(1, cmd.length).join(' ')));
-                    }
-            }else{cmds.check(cmd[0], msgobj);dict.check(msgobj.msg);}
-        }
+        if(msgobj.type == 'conv') {
+            if (ch4name() && cmds.check(cmd[1], msgobj)){}
+            if (ch4name() && dict.check(cmd.slice(1, cmd.length).join(' '))) {
+                bot.sendmsg('conv', msgobj.id, bot.getAnswer(msgobj)+dict.check(cmd.slice(1, cmd.length).join(' ')));
+            }
+        }else{cmds.check(cmd[0], msgobj);if(dict.check(msgobj.msg)){bot.sendmsg('user', msgobj.id, dict.check(msgobj.msg))}}
     }
 };

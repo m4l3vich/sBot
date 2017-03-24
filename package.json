@@ -1,11 +1,22 @@
 {
   "name": "sbot",
-  "version": "2.0.0",
-  "private": true,
-  "scripts": {
-    "start": "node . --harmony_array_includes --harmony_object_observe"
-  },
+  "version": "2.0.2",
+  "description": "Чат-бот для ВКонтакте, написанный на Node.js",
   "main": "app.js",
+  "scripts": {
+    "start": "node . --harmony_array_includes"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/m4l3vich/sBot.git"
+  },
+  "keywords": ["бот", "вк", "вконтакте"],
+  "author": "m4l3vich",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/m4l3vich/sBot/issues"
+  },
+  "homepage": "https://github.com/m4l3vich/sBot#readme",
   "dependencies": {
     "colors": "latest",
     "node-vkapi": "latest",

@@ -1,7 +1,8 @@
 process.stdout.setEncoding('utf8');
 const greet = [
     '+-------------------------+',
-    '|   sBot v2.0.2 Cerium    |',
+    '|   sBot v2.0.4 Cerium    |',
+    '| Версия Node.js: '+process.version+'  |',
     '|  by m4l3vich, (c) 2017  |',
     '+-------------------------+',
     ''
@@ -18,6 +19,10 @@ var authid = '';
 var sentid = '';
 var botname = [];
 console.log(greet.join('\n').green);
+if(process.version.startsWith('v7')){
+	console.log(['[init] Внимание! Node.js версии 7.х.х не поддерживается!',
+				       '[init] Рекомендуется использовать версию 6.9 или 6.10!'].join('\n').red)
+}
 
 var dict = {
     c:{},
@@ -79,8 +84,15 @@ const bot = {
             fs.writeFile('cache.json', '{\n}', function(err){if(err){console.log('[init]'.red,' Ошибка при создании файла кэша')}
                 else{console.log('[init]'.green,' Создан файл кэша')}})
           }else{
-            fs.readFile('cache.json', 'utf-8', function(err, file){cache = JSON.parse(file);
-                console.log('[init]'.green,' Загружено',Object.keys(cache).length,'пользователей из кэша');});
+            fs.readFile('cache.json', 'utf-8', function(err, file){
+              try{cache = JSON.parse(file);
+                console.log('[init]'.green,' Загружено',Object.keys(cache).length,'пользователей из кэша');
+              }catch(e){
+                console.log('[init] Файл кэша поврежден, идёт перезапись...'.red);
+                fs.writeFile('cache.json', '{\n}', function(err){if(err){console.log('[init]'.red,' Ошибка при перезаписи файла кэша')}
+                    else{console.log('[init]'.green,'Файл кэша успешно перезаписан')}})
+              }
+            });
           }
         });
         //Initialize LongPoll connection
@@ -145,7 +157,7 @@ const il = {
             VK.call('users.get', {user_ids: userid}, function(res){
                 cache[userid] = [res[0].first_name, res[0].last_name];
                 console.log('[cache] Пользователь', userid, 'кэширован');
-                fs.writeFile('cache.json', cache, null);
+                fs.writeFile('cache.json', JSON.stringify(cache, null, 2), null);
                 if(isConv){result = {id: userid, fname: res[0].first_name, lname: res[0].last_name};}
                 else{result = {fname: res[0].first_name, lname: res[0].last_name};}
                 callback(result);

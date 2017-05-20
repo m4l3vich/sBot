@@ -15,6 +15,7 @@ bot.dict.import({
 });
 ```
 Для получения access_token читайте [Получение access_token](docs/getting_token.md)
+
 `'rucaptcha_key'` - Ваш API ключ для сервиса распознавания капчи "RuCaptcha", необязательно
 
 ### Запуск бота

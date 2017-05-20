@@ -1,5 +1,3 @@
-// With love from M4L3VICH
-// For THECUBNICK and lambdaBot <3
 const r = require('request');
 var params = {};
 var captcha = '';
@@ -14,7 +12,7 @@ const api = {
     r.post({url: 'https://api.vk.com/method/'+method, form: args}, function(err, resp, body){
       const ans = JSON.parse(body);
       if (ans.error) {
-        console.error('API Error! "'+ans.error['error_msg']+'" Method: '+method)
+        console.error('[API] Ошибка: "'+ans.error['error_msg']+'" Метод: '+method)
       }else if(ans.error && ans.error.error_code == 14){
         api.captcha({url: ans.error.captcha_img,sid: ans.error.captcha_sid},
         {name: method,args: args}, callback)
@@ -23,36 +21,24 @@ const api = {
       }
     });
   },
-  upload(type, data, callback){
-    if(!params.token){throw new Error('[api] Невозможно загрузить файл: отсутствует access_token')}
-    switch(type){
-      case 'photo':
-        this.call('photos.getMessagesUploadServer',{},re=>{
-          r.post({url:re.upload_url, formData: {photo: data}}, function(e,ressp,body){
-            b = JSON.parse(body)
-            api.call('photos.saveMessagesPhoto',{photo: b.photo,server: b.server,hash: b.hash},
-            function(resp){callback('photo'+resp[0].owner_id+'_'+resp[0].id)})
-          });
+  upload(t, data, callback){
+    if(!params.token){throw new Error('[API] Невозможно загрузить файл: отсутствует access_token')}
+    if(t == 'photo'){
+      this.call('photos.getMessagesUploadServer',{},re=>{
+        r.post({url:re.upload_url, formData: {photo: data}}, function(e,ressp,body){
+          b = JSON.parse(body)
+          api.call('photos.saveMessagesPhoto',{photo: b.photo,server: b.server,hash: b.hash},
+          function(resp){callback('photo'+resp[0].owner_id+'_'+resp[0].id)})
         });
-        break;
-      case 'audio_msg':
-        this.call('docs.getUploadServer',{type: 'audio_message'},re=>{
-          r.post({url:re.upload_url, formData: {file: data}}, function(e,ressp,body){
-            b = JSON.parse(body)
-            api.call('docs.save',{file: b.file, title: ''},
-            function(resp){callback('docs'+resp[0].owner_id+'_'+resp[0].id)})
-          });
+      });
+    }else if(t == ('audio_message' || 'graffiti')){
+      this.call('docs.getUploadServer',{type: t},re=>{
+        r.post({url:re.upload_url, formData: {file: data}}, function(e,ressp,body){
+          b = JSON.parse(body)
+          api.call('docs.save',{file: b.file, title: ''},
+          function(resp){callback('docs'+resp[0].owner_id+'_'+resp[0].id)})
         });
-        break;
-      case 'graffiti':
-        this.call('docs.getUploadServer',{type: 'graffiti'},re=>{
-          r.post({url:re.upload_url, formData: {file: data}}, function(e,ressp,body){
-            b = JSON.parse(body)
-            api.call('docs.save',{file: b.file, title: ''},
-            function(resp){console.log(resp);callback('docs'+resp[0].owner_id+'_'+resp[0].id)})
-          });
-        });
-        break;
+      });
     }
   },
   captcha(o, method, callback){
@@ -66,13 +52,13 @@ const api = {
               var wait = setTimeout(function(){
                 r({url: this.checkUrl,
                   qs: {key:o.key,action:'get',id:id}}, function(err,resp,b){
-                  if (res.startsWith('ERROR')) console.error('[api] Ошибка распознавания капчи!');
+                  if (res.startsWith('ERROR')) console.error('[API] Ошибка распознавания капчи!');
                   if (~res.indexOf('NOT_READY')) wait()
                   method.args['captcha_sid'] = o.sid;
                   method.args['captcha_key'] = res.split('|')[1];
                   vk.call(method.name, method.args, function(res){callback(res)});
                 });
-              })
+              }, 5000)
             })
       })
   }

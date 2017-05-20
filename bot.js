@@ -57,10 +57,10 @@ const bot = {
   getArgs(text, isConv){
     try{
       if(isConv){
-        return text.split(' ').shift().shift()
+        return text.split(' ').splice(0,1).splice(0,1)
       }
       else{
-        return text.split(' ').shift()
+        return text.split(' ').splice(0,1)
       }
     }catch(e){
       return [text];
@@ -214,15 +214,15 @@ const bot = {
   },
   parse(msgobj){
     if(botname !== false){
-      cmd = msgobj.msg.split(' ');
+      cmd = msgobj.msg.full.split(' ');
       function a(){return botname.includes(cmd[0])}
       if(msgobj.type == 'conv') {
-        if(a() && dict.check(cmd.slice(1, cmd.length).join(' '))) {
-          bot.sendmsg('conv', msgobj.id, bot.getAnswer(msgobj)+dict.check(cmd.slice(1, cmd.length).join(' ')));
+        if(a() && dict.check(cmd.slice(1).join(' '))) {
+          bot.sendmsg('conv', msgobj.id, bot.getAnswer(msgobj)+dict.check(cmd.slice(1).join(' ')));
         }else if(a()){
-          msgevent.emit(cmd.slice(1, cmd.length).join(' '), msgobj)
+          msgevent.emit(cmd[1], msgobj)
         }
-      }else{if(dict.check(msgobj.msg)){bot.sendmsg('user', msgobj.id, dict.check(msgobj.msg))}else{msgevent.emit(cmd.join(' '), msgobj)}}
+      }else{if(dict.check(msgobj.msg.full)){bot.sendmsg('user', msgobj.id, dict.check(msgobj.msg.full))}else{msgevent.emit(cmd[1], msgobj)}}
     }else{
       msgevent.emit('newmsg', msgobj);
     }

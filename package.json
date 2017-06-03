@@ -12,7 +12,7 @@
   },
   "keywords": ["бот", "вк", "вконтакте"],
   "author": "m4l3vich",
-  "license": "MPL-2.0",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/m4l3vich/sBot/issues"
   },

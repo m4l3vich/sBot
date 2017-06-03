@@ -10,7 +10,6 @@
     "type": "git",
     "url": "git+https://github.com/m4l3vich/sBot.git"
   },
-  "keywords": ["бот", "вк", "вконтакте"],
   "author": "Eugeny Malevich",
   "license": "MIT",
   "bugs": {

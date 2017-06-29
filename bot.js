@@ -286,17 +286,17 @@ const bot = {
         if(a() && dict.check(cmd.slice(1).join(' '))) {
           bot.sendmsg('conv', msgobj.id, bot.getAnswer(msgobj)+dict.check(cmd.slice(1).join(' ')));
         }else if(a()){
-          msgevent.emit(cmd[1], msgobj);
+          msgevent.emit(cmd[1].toLowerCase(), msgobj);
         }
       }else{
         if(dict.check(msgobj.msg.full)){
           bot.sendmsg('user', msgobj.id, dict.check(msgobj.msg.full))
         }else{
-          msgevent.emit(cmd[0], msgobj);
+          msgevent.emit(cmd[0].toLowerCase(), msgobj);
         }
       }
     }
     msgevent.emit('newmsg', msgobj);
-    amsgevent.emit(msgobj.msg.full, msgobj);
+    amsgevent.emit(msgobj.msg.full.toLowerCase(), msgobj);
   }
   };

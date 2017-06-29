@@ -1,7 +1,7 @@
 process.stdout.setEncoding('utf8');
 const greet = [
   '╔══════════════════════════╗',
-  '║  sBot v2.1.0 Promethium  ║',
+  '║   sBot v2.2.0 Samarium   ║',
   '║  Made by m4l3vich, 2017  ║',
   '╚══════════════════════════╝',
   ''
@@ -11,79 +11,88 @@ class events extends require('events') {}
 const ievent = new events(); // Internal events
 const lpevent = new events(); // LongPoll events
 const msgevent = new events(); // Message events
+const amsgevent = new events(); // All messages events
 
 const fs = require('fs');
 const colors = require('colors');
 const r = require('request');
 const VK = require('./api');
-var cache = {}, authid = '', sentid = '', botname = [], processed = [];
+const closest = require('closest-str');
+var cache = {}, authid = 0, sentid = '', botname = [], dictmode = 0;
 console.log(greet.join('\n').green);
-if(process.version.startsWith('v7')){
-  console.log(['[init] Внимание! Node.js версии 7.х.х не поддерживается!',
-  '[init] Рекомендуется использовать версию 6.9 или 6.10!'].join('\n').red)
+if(!process.version.startsWith('v6')){
+  console.log(['[init] Внимание! Вы используете Node.js версии, отличной от 6.x.x',
+               '[init] Сейчас sBot гарантированно работает на Node.js версии 6.x',
+               '[init] При возникновении проблем напишите в https://github.com/m4l3vich/sBot/issues'].join('\n').red)
 }
 
 var dict = {
-  c:{},
-  import(requestObj){
-    for(i in requestObj){
-      this.add(i.toLowerCase(), requestObj[i]);
-    }
+  import(obj){
+    closest.setdict(obj);
   },
-  add(request, answer){
-    this.c[request.toLowerCase()] = answer
+  add(req, ans){
+    var newdict = closest.__dict;
+    newdict[Object.keys(closestStr.__dict).length] = {answer: ans, query: req};
+    closest.setdict(newdict);
   },
   check(request){
-    if(request){request = request.toLowerCase()}
-    if(this.c[request.toLowerCase()]){return this.c[request]}
-    else{return false}
-  }
-};
-var cmds = {
-  c:{},
-  add(request, func){
-    this.c[request] = func
-  },
-  check(request, peer){
-    if(request){request = request.toLowerCase()}
-    if(this.c[request.toLowerCase()]){this.c[request](peer)}
-    else{return false}
+    if(dictmode == 0){
+      var res = closest.request(request)
+      console.log('mode0',res)
+
+      if(res.query == null && res.answer == 'false') return false
+      else return res.answer
+    }else if(dictmode == 1){
+      var res = request.split(' ').map(e=>closest.request(e)).filter(e=>e.query != null && e.answer != 'false')
+      console.log('mode1',res)
+
+      if(res.length == 0) return false
+      else return res[0].answer
+    }
   }
 };
 
 const bot = {
-  lpevent, msgevent, dict, cmds, VK, authid, botname, colors,
-  getVer(){return greet[1]},
+  lpevent, msgevent, amsgevent, dict, VK, authid, botname, colors,
+  version: {
+    codenum: greet[1].match(/v\d.\d.\d\s\S\w*/g),
+    num: greet[1].match(/v\d.\d.\d/g)
+  },
   getArgs(text, isConv){
     try{
       if(isConv){
-        return text.split(' ').splice(0,1).splice(0,1)
+        return text.split(' ').slice(2)
       }
       else{
-        return text.split(' ').splice(0,1)
+        return text.split(' ').slice(1)
       }
     }catch(e){
       return [text];
     }
   },
   getAnswer(peer){return '[id'+peer.s.id+'|'+peer.s.fname+'], ';},
-  init(name, token, captcha){
-    if(captcha){o = captcha}else{o = null}
-    VK.init(token, o)
-    botname = name;
+  init(opts){
+    if(opts.rucaptcha){o = opts.rucaptcha}else{o = null}
+    VK.init(opts.token, o)
+    closest.setlow(opts.dictmatch || 1)
+    dictmode = opts.dictmode || 0
+    closest.setlow('false');
+    botname = opts.botname.map(e => e.toLowerCase());
     //Authorize user
     console.log('[init]'.green,' Получение информации об аккаунте...');
-    VK.call('users.get', {}, function(res){
-      userinfo = [res[0].id, res[0].first_name, res[0].last_name];
-      console.log('[init]'.green,' Авторизация успешна, ID:',userinfo[0]);});
+    VK.call('users.get', {}).then(res =>{
+      authid = res[0].id
+      console.log('[init]'.green,' Успешно авторизовано как',res[0].first_name,res[0].last_name,'(ID: '+res[0].id+')');
+    });
       //Set status
-      VK.call('status.set', {text: greet[1], group_id: 0});
-      //Load cache and initialize cache watcher
+      VK.call('status.set', {text: opts.status ? opts.status : 'sBot '+bot.version.codenum, group_id: 0});
+      //Load cache
       console.log('[init]'.green,' Загрузка кэша пользователей...');
       fs.access('cache.json', fs.constants.F_OK, function(err){
         if(err){
-          fs.writeFile('cache.json', '{\n}', function(err){if(err){console.log('[init]'.red,' Ошибка при создании файла кэша')}
-          else{console.log('[init]'.green,' Создан файл кэша')}})
+          fs.writeFile('cache.json', '{\n}', function(err){
+            if(err){console.log('[init]'.red,' Ошибка при создании файла кэша')}
+            else{console.log('[init]'.green,' Создан файл кэша')}})
         }else{
           fs.readFile('cache.json', 'utf-8', function(err, file){
             try{cache = JSON.parse(file);
@@ -97,7 +106,7 @@ const bot = {
         }
       });
       //Initialize LongPoll connection
-      VK.call('messages.getLongPollServer', {use_ssl: 1}, function(res){
+      VK.call('messages.getLongPollServer', {use_ssl: 1}).then(res => {
         console.log('[init]'.green,' Запущен цикл LongPoll');il.longpollLoop(res);});
         //Online loop
         console.log('[init]'.green,' Запущен цикл установки онлайна');
@@ -109,7 +118,8 @@ const bot = {
         if (attach) {obj = {peer_id: id, message: msg, attachment: attach}}
         else if(sid) {obj = {peer_id: id, sticker_id: sid}}
         else {obj = {peer_id: id, message: msg}}
-        VK.call('messages.send', obj, function(res){
+        VK.call('messages.send', obj)
+        .then(res => {
           if (res.error) {
             switch (res.error.error_code) {
               case 902:console.log('[msg] Ошибка отправки пользователю %s: Запрещено настройками приватности'.red, id);break;
@@ -129,63 +139,121 @@ const bot = {
         else{return `[${obj.s.fname} ${obj.s.lname}, ${obj.id}]: ${obj.msg.full}`}
       },
       parselp(answer, callback){
+        function pu(userid){
+          return new Promise(function(resolve, reject){ // Parses user id and saves it to cache, or returns value from cache
+            if(cache[userid]){
+              resolve({id: userid, fname: cache[userid][0], lname: cache[userid][1]});
+            }else{
+              VK.call('users.get', {user_ids: userid}).then(res => {
+                cache[userid] = [res[0].first_name, res[0].last_name];
+                console.log('[cache] Пользователь', userid, 'кэширован');
+                fs.writeFile('cache.json', JSON.stringify(cache, null, 2), null);
+                resolve({id: userid, fname: res[0].first_name, lname: res[0].last_name});
+              })
+            }
+          })
+        }
         answer.forEach(function(ans){
-          switch(ans[0]){
-            case 7: // Read incoming messages
-              lpevent.emit('read', {peer_id: ans[1], local_id: ans[2]})
-              break;
-            case 8: // Friend goes online
-              lpevent.emit('online', {user_id: ans[1]})
-              break;
-            case 9: // Friend goes offline
-              lpevent.emit('offline', {user_id: ans[1], flags: ans[2]})
-              break;
-            case 61: // User started writing
-              lpevent.emit('userwrite', {user_id: ans[1]})
-              break;
-            case 62: // User started writing in chat
-              lpevent.emit('chatwrite', {user_id: ans[1], chat_id: ans[2]})
-              break;
-            case 4: // Incoming message
-              var isConv = false;
-              var convName = '', msg = '', userid = 0;
-              if(ans[7] && ans[7].from){userid = ans[7]['from'];ans[3] -= 2000000000;isConv = true}
-              else{userid = ans[3]}
-              if(isConv){convName = ans[5]}
-              if(sentid != ans[1] && !(processed.includes(ans[1]))){
-                function pu(userid, isConv, callback){
-                  if(cache[userid]){
-                    callback(isConv ? {id: userid, fname: cache[userid][0], lname: cache[userid][1]} :
-                                      {fname: cache[userid][0], lname: cache[userid][1]});
-                  }else{
-                    VK.call('users.get', {user_ids: userid}, function(res){
-                      cache[userid] = [res[0].first_name, res[0].last_name];
-                      console.log('[cache] Пользователь', userid, 'кэширован');
-                      fs.writeFile('cache.json', JSON.stringify(cache, null, 2), null);
-                      callback(isConv ? {id: userid, fname: res[0].first_name, lname: res[0].last_name} :
-                                        {fname: res[0].first_name, lname: res[0].last_name});
-                    })
-                  }
-                }
-                pu(userid, isConv, function(result){
-                  resobj = {
-                    type: isConv ? 'conv' : 'user',
-                    id: ans[3],
-                    msgid: ans[1],
-                    msg: {
-                      full: ans[6],
-                      args: bot.getArgs(ans[6], isConv)
-                    },
-                    s: result
-                  };
-                  if(isConv){resobj['name'] = convName}
-                  console.log('[msg] Получено [<=] %s'.yellow,il.lpmask(resobj));il.parse(resobj);
-                  processed.push(ans[1])
+          if(ans[7] && ans[7]['source_act']){
+            function truncate(id, nc){
+              return new Promise(function(resolve, reject){
+                if(nc){
+                  Promise.all([VK.call('users.get', {user_ids: id, name_case: nc}), pu(id)])
+                    .then(res => {resolve({t: `${res[0][0].first_name} ${res[0][0].last_name}`,f: res[1]})})
+                }else{pu(id).then(usr => {resolve({t: `${usr.fname.charAt(0)}. ${usr.lname}`, f: usr})})}
+              })
+            }
+            switch(ans[7]['source_act']){
+              case 'chat_create':       // Someone created chat
+                truncate(ans[7].from)
+                .then(name => {
+                  console.log(`[lpevent]`.inverse, `${name.t} создал беседу "${ans[7]['source_text']}"`.green)
+                  lpevent.emit('chat_create', {name: ans[7]['source_text'], admin: name.f, peer_id: ans[3]});
                 })
-              }
-              break;
-            default:
-              break;
+                break;
+              case 'chat_title_update': // Someone updated chat name
+                truncate(ans[7].from)
+                .then(name => {
+                  console.log(`[lpevent]`.inverse, `${name.t} изменил название беседы с "${ans[7]['source_old_text']}" на "${ans[7]['source_text']}"`.green)
+                  lpevent.emit('chat_title_update', {oldname: ans[7]['source_old_text'], newname: ans[7]['source_text'], user: name.f, peer_id: ans[3]-2000000000});
+                })
+                break;
+              case 'chat_photo_update': // Someone updated chat photo
+                truncate(ans[7].from)
+                .then(name => {
+                  console.log(`[lpevent]`.inverse, `${name.t} изменил фото в беседе с id ${ans[3]-2000000000}`.green)
+                  lpevent.emit('chat_photo_update', {photo: ans[7]['attach1'], user: name.f, peer_id: ans[3]-2000000000});
+                })
+                break;
+              case 'chat_invite_user':  // Someone invited user into chat
+                Promise.all([truncate(ans[7].from), truncate(ans[7].source_mid, 'gen')])
+                .then(n =>{
+                  console.log(`[lpevent]`.inverse, `${n[0].t} пригласил ${n[1].t} в беседу с id ${ans[3]-2000000000}`.green)
+                  lpevent.emit('chat_invite_user', {inviter: n[0].f, invited: n[1].f, peer_id: ans[3]-2000000000});
+                })
+                break;
+              case 'chat_kick_user':    // Someone kicked user from chat
+                Promise.all([truncate(ans[7].from), truncate(ans[7].source_mid, 'gen')])
+                .then(n =>{
+                  console.log(`[lpevent]`.inverse, `${n[0].t} исключил ${n[1].t} из беседы с id ${ans[3]-2000000000}`.green)
+                  lpevent.emit('chat_kick_user', {kicker: n[0].f, kicked: n[1].f, peer_id: ans[3]-2000000000});
+                })
+                break;
+              default:
+                break;
+            }
+          }else{
+            switch(ans[0]){ // Parse LongPoll's updates array
+              case 7:  // Read incoming messages
+                lpevent.emit('read', {peer_id: ans[1], local_id: ans[2]})
+                break;
+              case 8:  // Friend goes online
+                lpevent.emit('online', {user_id: ans[1]})
+                break;
+              case 9:  // Friend goes offline
+                lpevent.emit('offline', {user_id: ans[1], flags: ans[2]})
+                break;
+              case 61: // User started writing
+                lpevent.emit('userwrite', {user_id: ans[1]})
+                break;
+              case 62: // User started writing in chat
+                lpevent.emit('chatwrite', {user_id: ans[1], chat_id: ans[2]})
+                break;
+              case 4:  // Incoming message
+                var isConv = false;
+                var convName = '', msg = '', userid = 0;
+                if(ans[7] && ans[7].from){userid = ans[7]['from'];ans[3] -= 2000000000;isConv = true}
+                else{userid = ans[3]}
+                if(isConv){convName = ans[5]}
+                if(sentid != ans[1] && ans[7].from != authid){
+                  pu(userid).then(result => {
+                    resobj = {
+                      type: isConv ? 'conv' : 'user',
+                      id: ans[3],
+                      msgid: ans[1],
+                      msg: {
+                        full: ans[6],
+                        args: bot.getArgs(ans[6], isConv)
+                      },
+                      s: result,
+                      answer: function(msg, options, stickerid){
+                        if(typeof msg == 'object'){
+                          bot.sendmsg(isConv ? 'conv' : 'user', ans[3], null, msg.attachment || null, msg.stickerid || null)
+                        }else if(options && !stickerid){
+                          bot.sendmsg(isConv ? 'conv' : 'user', ans[3], null, options.attachment || null, options.stickerid || null)
+                        }else{
+                          bot.sendmsg(isConv ? 'conv' : 'user', ans[3], msg || null, options || null, stickerid || null)
+                        }
+                      }
+                    };
+                    if(isConv){resobj['name'] = convName}
+                    console.log('[msg] Получено [<=] %s'.yellow,il.lpmask(resobj));il.parse(resobj);
+                  })
+                }
+                break;
+              default:
+                break;
+            }
           }
         })
       },
@@ -200,7 +268,7 @@ const bot = {
         if(answer.updates && answer.updates.length == 0){il.longpollLoop({key: info.key, server: info.server, ts: answer.ts})}
         else if(answer.failed == 1){il.longpollLoop({key: info.key, server: info.server, ts: answer.ts})}
         else if(answer.failed == 2 || answer.failed == 3){
-          VK.call('messages.getLongPollServer', {use_ssl: 1}, function(res){
+          VK.call('messages.getLongPollServer', {use_ssl: 1}).then(res => {
             console.log('[init]'.green,' Цикл LongPoll перезапущен с новым ключом');il.longpollLoop(res);
           });
         }else{
@@ -215,16 +283,22 @@ const bot = {
   parse(msgobj){
     if(botname !== false){
       cmd = msgobj.msg.full.split(' ');
-      function a(){return botname.includes(cmd[0])}
+      function a(){return botname.includes(cmd[0].toLowerCase())}
       if(msgobj.type == 'conv') {
         if(a() && dict.check(cmd.slice(1).join(' '))) {
           bot.sendmsg('conv', msgobj.id, bot.getAnswer(msgobj)+dict.check(cmd.slice(1).join(' ')));
         }else if(a()){
-          msgevent.emit(cmd[1], msgobj)
+          msgevent.emit(cmd[1], msgobj);
         }
-      }else{if(dict.check(msgobj.msg.full)){bot.sendmsg('user', msgobj.id, dict.check(msgobj.msg.full))}else{msgevent.emit(cmd[1], msgobj)}}
-    }else{
-      msgevent.emit('newmsg', msgobj);
+      }else{
+        if(dict.check(msgobj.msg.full)){
+          bot.sendmsg('user', msgobj.id, dict.check(msgobj.msg.full))
+        }else{
+          msgevent.emit(cmd[0], msgobj);
+        }
+      }
     }
+    msgevent.emit('newmsg', msgobj);
+    amsgevent.emit(msgobj.msg.full, msgobj);
   }
   };

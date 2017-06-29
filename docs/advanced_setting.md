@@ -3,7 +3,7 @@
 Используйте метод `bot.dict.import(obj)`, вместо **obj** используя объект в формате *запрос: ответ*
 
 Пример:
-```
+```JavaScript
 bot.dict.import({
     'Один': 'One',
     'Два': 'Two'
@@ -13,24 +13,32 @@ bot.dict.import({
 Используйте метод `bot.msgevent.on(command, callback)`, вместо **command** используя строку, обозначающую команду без аргументов
 
 Пример:
-```
+```JavaScript
 bot.msgevent.on('2+2', function(peer){
     bot.sendmsg(peer.type, peer.id, '2+2=5')
 });
 ```
 
-С версии 2.1.0 вы можете установить имя бота при инициализации на false(boolean) и получать события о всех сообщениях:
+С версии 2.1.0 вы можете получать все сообщения используя событие `newmsg`:
+```JavaScript
+bot.msgevent.on('newmsg', function(peer){
+    // Обработка полученного сообщения, независимо от обращения
+});
 ```
+Также вы можете получать все сообщения используя `amsgevent`:
+```JavaScript
 const bot = require('./bot');
 bot.init(false, 'access_token', 'rucaptcha_key');
 
-bot.msgevent.on('newmsg', function(peer){
-    // Обработка полученного сообщения, не связанного с обращением к боту
+bot.amsgevent.on('Привет!', function(peer){
+    // Обработка полученного сообщения, независимо от обращения
+    console.log(peer.msg.full)
+    // Выведет "Привет!"
 });
 ```
 
 #### Строение объекта peer
-```
+```JavaScript
 Для сообщений из беседы:
 {
   type: 'conv', //Показывает, что сообщение из беседы, строка
@@ -63,9 +71,39 @@ bot.msgevent.on('newmsg', function(peer){
   }
 }
 ```
+### Использование методов VK API
+Используйте метод `bot.VK.call(method, args)`, где **method** - необходимый вам метод(строка), а **args** - аргументы метода(объект)
+```JavaScript
+bot.VK.call('users.get', {user_ids: 1})
+  .then(res => console.log(res));
 
-#### Синтаксис метода bot.sendmsg()
+// Выведет:
+// [ { id: 1, first_name: 'Павел', last_name: 'Дуров' } ]
 ```
+
+### Ответ с помощью peer.answer()
+#### Синтаксис метода
+
+
+```JavaScript
+peer.answer(text, attachment, stickerid)
+```  
+_ИЛИ_  
+```JavaScript
+peer.answer(text, {attachment: 'photo12345_67890', stickerid: 123})
+```  
+_ИЛИ_  
+```JavaScript
+peer.answer({attachment: 'photo12345_67890', stickerid: 123})
+```  
+
+- **text** - Отправляемый текст сообщения, строка
+- **attachment** - Медиафайл для прикрепления (аудио, видео, документ), строка
+- **stickerid** - ID стикера, который надо прикрепить, число
+
+
+### Синтаксис метода bot.sendmsg()
+```JavaScript
 bot.sendmsg(type, id, text, attachment, stickerid, callback)
 ```
 - **type** - Тип сообщения (личное, беседа), строка
@@ -76,19 +114,20 @@ bot.sendmsg(type, id, text, attachment, stickerid, callback)
 - **callback** - Функция, выполняемая после отправки
 
 #### Загрузка медиафайлов
-```
+```JavaScript
 bot.VK.upload('photo', {data: d}, function(r){
   console.log(r) // photo12345_67890
 })
 ```
 
 - **type** - Типа медиафайла, список приведён ниже
-- **data** - Медиафайл, может быть получен с помощью `fs.createReadStream()`
+- **data** - Сам медиафайл (Buffer)
 
 #### Остальные методы и их синтаксис
-1. `bot.getVer()` - Возвращает строку, содержащую версию sBot
-2. `bot.getArgs(peer)` - Возвращает массив, содержащий аргументы (слова после команды), например `sBot, привет как дела? -> ['как', 'дела?']`
-3. `bot.getAnswer(peer)` - Возвращает строку, содержащую обращение к пользователю, например `[id193158046|Евгений],` (ТОЛЬКО ДЛЯ БЕСЕД)
+1. `bot.getArgs(peer)` - Возвращает массив, содержащий аргументы (слова после команды), например `sBot, привет как дела? -> ['как', 'дела?']`
+2. `bot.getAnswer(peer)` - Возвращает строку, содержащую обращение к пользователю, например `[id193158046|Евгений],` (ТОЛЬКО ДЛЯ БЕСЕД)
+3. Поле `bot.version.codenum` - Возвращает версию sBot (номер + кодовое имя)
+4. Поле `bot.version.num` - Возвращает версию sBot (только номер)
 
 #### Список типов медиафайлов
 - `audio_msg` - Голосовое сообщение (документ)

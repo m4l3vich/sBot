@@ -38,13 +38,11 @@ var dict = {
   check(request){
     if(dictmode == 0){
       var res = closest.request(request)
-      console.log('mode0',res)
 
       if(res.query == null && res.answer == 'false') return false
       else return res.answer
     }else if(dictmode == 1){
       var res = request.split(' ').map(e=>closest.request(e)).filter(e=>e.query != null && e.answer != 'false')
-      console.log('mode1',res)
 
       if(res.length == 0) return false
       else return res[0].answer

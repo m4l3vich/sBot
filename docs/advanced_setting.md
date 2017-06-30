@@ -86,15 +86,7 @@ bot.VK.call('users.get', {user_ids: 1})
 
 
 ```JavaScript
-peer.answer(text, attachment, stickerid)
-```  
-_ИЛИ_  
-```JavaScript
-peer.answer(text, {attachment: 'photo12345_67890', stickerid: 123})
-```  
-_ИЛИ_  
-```JavaScript
-peer.answer({attachment: 'photo12345_67890', stickerid: 123})
+peer.answer(text[, attachment][, stickerid])
 ```  
 
 - **text** - Отправляемый текст сообщения, строка
@@ -104,7 +96,7 @@ peer.answer({attachment: 'photo12345_67890', stickerid: 123})
 
 ### Синтаксис метода bot.sendmsg()
 ```JavaScript
-bot.sendmsg(type, id, text, attachment, stickerid, callback)
+bot.sendmsg(type, id, text[, attachment][, stickerid][, callback])
 ```
 - **type** - Тип сообщения (личное, беседа), строка
 - **id** - ID, куда нужно отправить сообщение (id пользователя или беседы), число

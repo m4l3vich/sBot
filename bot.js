@@ -281,7 +281,7 @@ const bot = {
   parse(msgobj){
     if(botname !== false){
       cmd = msgobj.msg.full.split(' ');
-      function a(){return botname.includes(cmd[0].toLowerCase())}
+      function a(){return botname.includes(cmd[0].replace(/[^a-zа-я]/gi, '').trim().toLowerCase())}
       if(msgobj.type == 'conv') {
         if(a() && dict.check(cmd.slice(1).join(' '))) {
           bot.sendmsg('conv', msgobj.id, bot.getAnswer(msgobj)+dict.check(cmd.slice(1).join(' ')));

@@ -1,9 +1,9 @@
 process.stdout.setEncoding('utf8');
 const greet = [
-  '╔══════════════════════════╗',
-  '║   sBot v2.2.0 Samarium   ║',
-  '║  Made by m4l3vich, 2017  ║',
-  '╚══════════════════════════╝',
+  '╔═════════════════════════════╗',
+  '║   sBot v2.3.0 Europium DEV  ║',
+  '║    Made by m4l3vich, 2017   ║',
+  '╚═════════════════════════════╝',
   ''
 ];
 class events extends require('events') {}
@@ -16,9 +16,26 @@ const amsgevent = new events(); // All messages events
 const fs = require('fs');
 const colors = require('colors');
 const r = require('request');
-const VK = require('./api');
+const api = require('./api');
+var VK = {
+  cnotified: false,
+  unotified: false,
+  call: function(method, args){
+    if(!VK.cnotified){
+      console.log('Внимание: Метод bot.VK.call() устарел и будет удалён в версии 2.4.0. Пожалуйста, используйте bot.api.call()'.inverse)
+      VK.cnotified = true
+    }
+    return api.call(method, args)
+  },
+  upload: function(t, data, callback){
+    if(!VK.unotified){
+      console.log('Внимание: Метод bot.VK.upload() устарел и будет удалён в версии 2.4.0. Пожалуйста, используйте bot.api.upload()'.inverse)
+      VK. unotified = true
+    }
+    return api.upload(t, data, callback)
+  }
+};
 const closest = require('closest-str');
-var cache = {}, authid = 0, sentid = '', botname = [], dictmode = 0;
 console.log(greet.join('\n').green);
 if(!process.version.startsWith('v6')){
   console.log(['[init] Внимание! Вы используете Node.js версии, отличной от 6.x.x',
@@ -36,12 +53,12 @@ var dict = {
     closest.setdict(newdict);
   },
   check(request){
-    if(dictmode == 0){
+    if(global.dictmode == 0){
       var res = closest.request(request)
 
       if(res.query == null && res.answer == 'false') return false
       else return res.answer
-    }else if(dictmode == 1){
+    }else if(global.dictmode == 1){
       var res = request.split(' ').map(e=>closest.request(e)).filter(e=>e.query != null && e.answer != 'false')
 
       if(res.length == 0) return false
@@ -51,7 +68,9 @@ var dict = {
 };
 
 const bot = {
-  lpevent, msgevent, amsgevent, dict, VK, authid, botname, colors,
+  lpevent, msgevent, amsgevent, dict, VK, api, colors,
+  authid(){return global.authid},
+  botname(){return global.botname},
   version: {
     codenum: greet[1].match(/v\d.\d.\d\s\S\w*/g),
     num: greet[1].match(/v\d.\d.\d/g)
@@ -71,19 +90,19 @@ const bot = {
   getAnswer(peer){return '[id'+peer.s.id+'|'+peer.s.fname+'], ';},
   init(opts){
     if(opts.rucaptcha){o = opts.rucaptcha}else{o = null}
-    VK.init(opts.token, o)
+    api.init(opts.token, o)
     closest.setlow(opts.dictmatch || 1)
-    dictmode = opts.dictmode || 0
+    global.dictmode = opts.dictmode || 0
     closest.setlow('false');
-    botname = opts.botname.map(e => e.toLowerCase());
+    global.botname = opts.botname.map(e => e.toLowerCase());
     //Authorize user
     console.log('[init]'.green,' Получение информации об аккаунте...');
-    VK.call('users.get', {}).then(res =>{
+    api.call('users.get', {}).then(res =>{
       authid = res[0].id
       console.log('[init]'.green,' Успешно авторизовано как',res[0].first_name,res[0].last_name,'(ID: '+res[0].id+')');
     });
       //Set status
-      VK.call('status.set', {text: opts.status ? opts.status : 'sBot '+bot.version.codenum, group_id: 0});
+      api.call('status.set', {text: opts.status ? opts.status : 'sBot '+bot.version.codenum, group_id: 0});
       //Load cache
       console.log('[init]'.green,' Загрузка кэша пользователей...');
       fs.access('cache.json', fs.constants.F_OK, function(err){
@@ -93,8 +112,8 @@ const bot = {
             else{console.log('[init]'.green,' Создан файл кэша')}})
         }else{
           fs.readFile('cache.json', 'utf-8', function(err, file){
-            try{cache = JSON.parse(file);
-              console.log('[init]'.green,' Загружено',Object.keys(cache).length,'пользователей из кэша');
+            try{global.cache = JSON.parse(file);
+              console.log('[init]'.green,' Загружено',Object.keys(global.cache).length,'пользователей из кэша');
             }catch(e){
               console.log('[init] Файл кэша поврежден, идёт перезапись...'.red);
               fs.writeFile('cache.json', '{\n}', function(err){if(err){console.log('[init]'.red,' Ошибка при перезаписи файла кэша')}
@@ -104,19 +123,19 @@ const bot = {
         }
       });
       //Initialize LongPoll connection
-      VK.call('messages.getLongPollServer', {use_ssl: 1}).then(res => {
+      api.call('messages.getLongPollServer', {use_ssl: 1}).then(res => {
         console.log('[init]'.green,' Запущен цикл LongPoll');il.longpollLoop(res);});
         //Online loop
         console.log('[init]'.green,' Запущен цикл установки онлайна');
-        VK.call('account.setOnline', {});
-        setInterval(function(){VK.call('account.setOnline')}, 600000);
+        api.call('account.setOnline', {});
+        setInterval(function(){api.call('account.setOnline')}, 600000);
       },
       sendmsg(type, id, msg, attach, sid, callback){
         if (type == 'conv') {id = id + 2000000000}
         if (attach) {obj = {peer_id: id, message: msg, attachment: attach}}
         else if(sid) {obj = {peer_id: id, sticker_id: sid}}
         else {obj = {peer_id: id, message: msg}}
-        VK.call('messages.send', obj)
+        api.call('messages.send', obj)
         .then(res => {
           if (res.error) {
             switch (res.error.error_code) {
@@ -125,7 +144,7 @@ const bot = {
               default:console.log('[msg] Произошла неизвестная ошибка: %s'.red, id)
             }
           }
-          else {sentid = res;console.log('[msg] Отправлено [=>] %s'.cyan, sid ? '(Стикер #'+sid+')' : il.msgmask(id, msg));if (callback) {callback()}}
+          else {console.log('[msg] Отправлено [=>] %s'.cyan, sid ? '(Стикер #'+sid+')' : il.msgmask(id, msg));if (callback) {callback()}}
         })
       }
     };
@@ -133,19 +152,19 @@ const bot = {
     const il = {
       msgmask(id,msg){return id+': '+msg;},
       lpmask(obj){
-        if(obj.type == 'conv'){return `[${obj.name}] ${obj.s.fname} ${obj.s.lname}: ${obj.msg.full}`}
+        if(obj.type == 'conv'){return `[${obj.name} | ${obj.id}] ${obj.s.fname} ${obj.s.lname}: ${obj.msg.full}`}
         else{return `[${obj.s.fname} ${obj.s.lname}, ${obj.id}]: ${obj.msg.full}`}
       },
       parselp(answer, callback){
         function pu(userid){
           return new Promise(function(resolve, reject){ // Parses user id and saves it to cache, or returns value from cache
-            if(cache[userid]){
-              resolve({id: userid, fname: cache[userid][0], lname: cache[userid][1]});
+            if(global.cache[userid]){
+              resolve({id: userid, fname: global.cache[userid][0], lname: global.cache[userid][1]});
             }else{
-              VK.call('users.get', {user_ids: userid}).then(res => {
-                cache[userid] = [res[0].first_name, res[0].last_name];
+              api.call('users.get', {user_ids: userid}).then(res => {
+                global.cache[userid] = [res[0].first_name, res[0].last_name];
                 console.log('[cache] Пользователь', userid, 'кэширован');
-                fs.writeFile('cache.json', JSON.stringify(cache, null, 2), null);
+                fs.writeFile('cache.json', JSON.stringify(global.cache, null, 2), null);
                 resolve({id: userid, fname: res[0].first_name, lname: res[0].last_name});
               })
             }
@@ -156,7 +175,7 @@ const bot = {
             function truncate(id, nc){
               return new Promise(function(resolve, reject){
                 if(nc){
-                  Promise.all([VK.call('users.get', {user_ids: id, name_case: nc}), pu(id)])
+                  Promise.all([api.call('users.get', {user_ids: id, name_case: nc}), pu(id)])
                     .then(res => {resolve({t: `${res[0][0].first_name} ${res[0][0].last_name}`,f: res[1]})})
                 }else{pu(id).then(usr => {resolve({t: `${usr.fname.charAt(0)}. ${usr.lname}`, f: usr})})}
               })
@@ -223,7 +242,7 @@ const bot = {
                 if(ans[7] && ans[7].from){userid = ans[7]['from'];ans[3] -= 2000000000;isConv = true}
                 else{userid = ans[3]}
                 if(isConv){convName = ans[5]}
-                if(sentid != ans[1] && ans[7].from != authid){
+                if(ans[7].from != global.authid){
                   pu(userid).then(result => {
                     resobj = {
                       type: isConv ? 'conv' : 'user',
@@ -235,13 +254,7 @@ const bot = {
                       },
                       s: result,
                       answer: function(msg, options, stickerid){
-                        if(typeof msg == 'object'){
-                          bot.sendmsg(isConv ? 'conv' : 'user', ans[3], null, msg.attachment || null, msg.stickerid || null)
-                        }else if(options && !stickerid){
-                          bot.sendmsg(isConv ? 'conv' : 'user', ans[3], null, options.attachment || null, options.stickerid || null)
-                        }else{
-                          bot.sendmsg(isConv ? 'conv' : 'user', ans[3], msg || null, options || null, stickerid || null)
-                        }
+                        bot.sendmsg(isConv ? 'conv' : 'user', ans[3], msg || null, options || null, stickerid || null)
                       }
                     };
                     if(isConv){resobj['name'] = convName}
@@ -266,7 +279,7 @@ const bot = {
         if(answer.updates && answer.updates.length == 0){il.longpollLoop({key: info.key, server: info.server, ts: answer.ts})}
         else if(answer.failed == 1){il.longpollLoop({key: info.key, server: info.server, ts: answer.ts})}
         else if(answer.failed == 2 || answer.failed == 3){
-          VK.call('messages.getLongPollServer', {use_ssl: 1}).then(res => {
+          api.call('messages.getLongPollServer', {use_ssl: 1}).then(res => {
             console.log('[init]'.green,' Цикл LongPoll перезапущен с новым ключом');il.longpollLoop(res);
           });
         }else{
@@ -279,9 +292,9 @@ const bot = {
     })
   },
   parse(msgobj){
-    if(botname !== false){
+    if(global.botname !== false){
       cmd = msgobj.msg.full.split(' ');
-      function a(){return botname.includes(cmd[0].replace(/[^a-zа-я]/gi, '').trim().toLowerCase())}
+      function a(){return global.botname.includes(cmd[0].replace(/[^a-zа-я]/gi, '').trim().toLowerCase())}
       if(msgobj.type == 'conv') {
         if(a() && dict.check(cmd.slice(1).join(' '))) {
           bot.sendmsg('conv', msgobj.id, bot.getAnswer(msgobj)+dict.check(cmd.slice(1).join(' ')));

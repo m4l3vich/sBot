@@ -41,6 +41,9 @@ if(!process.version.startsWith('v6')){
   console.log(['[init] Внимание! Вы используете Node.js версии, отличной от 6.x.x',
                '[init] Сейчас sBot гарантированно работает на Node.js версии 6.x',
                '[init] При возникновении проблем напишите в https://github.com/m4l3vich/sBot/issues'].join('\n').red)
+};
+global.use = function(msg, next){
+  next(true)
 }
 
 var dict = {
@@ -128,7 +131,7 @@ const bot = {
         //Online loop
         console.log('[init]'.green,' Запущен цикл установки онлайна');
         api.call('account.setOnline', {});
-        setInterval(function(){api.call('account.setOnline')}, 600000);
+        setInterval(function(){api.call('account.setOnline')}, 300000);
       },
       sendmsg(type, id, msg, attach, sid, callback){
         if (type == 'conv') {id = id + 2000000000}
@@ -146,6 +149,9 @@ const bot = {
           }
           else {console.log('[msg] Отправлено [=>] %s'.cyan, sid ? '(Стикер #'+sid+')' : il.msgmask(id, msg));if (callback) {callback()}}
         })
+      },
+      use(callback){
+        global.use = callback;
       }
     };
     module.exports = bot;
@@ -292,24 +298,35 @@ const bot = {
     })
   },
   parse(msgobj){
-    if(global.botname !== false){
-      cmd = msgobj.msg.full.split(' ');
-      function a(){return global.botname.includes(cmd[0].replace(/[^a-zа-я]/gi, '').trim().toLowerCase())}
-      if(msgobj.type == 'conv') {
-        if(a() && dict.check(cmd.slice(1).join(' '))) {
-          bot.sendmsg('conv', msgobj.id, bot.getAnswer(msgobj)+dict.check(cmd.slice(1).join(' ')));
-        }else if(a()){
-          msgevent.emit(cmd[1].toLowerCase(), msgobj);
+    cmd = msgobj.msg.full.split(' ');
+    function a(){return global.botname.includes(cmd[0].replace(/[^a-zа-я]/gi, '').trim().toLowerCase())}
+    global.use(msgobj.msg.full, a(), function(allow){
+      if(allow === true){
+        if(global.botname !== false){
+          if(msgobj.type == 'conv') {
+            if(a() && dict.check(cmd.slice(1).join(' '))) {
+              bot.sendmsg('conv', msgobj.id, bot.getAnswer(msgobj)+dict.check(cmd.slice(1).join(' ')));
+            }else if(a()){
+              msgevent.emit(cmd[1].toLowerCase(), msgobj);
+            }
+          }else{
+            if(dict.check(msgobj.msg.full)){
+              bot.sendmsg('user', msgobj.id, dict.check(msgobj.msg.full))
+            }else{
+              msgevent.emit(cmd[0].toLowerCase(), msgobj);
+            }
+          }
         }
-      }else{
-        if(dict.check(msgobj.msg.full)){
-          bot.sendmsg('user', msgobj.id, dict.check(msgobj.msg.full))
+        msgevent.emit('newmsg', msgobj);
+        amsgevent.emit(msgobj.msg.full.toLowerCase(), msgobj);
+      }else if(allow instanceof Error && allow.message){
+        console.log('[use] Сообщение фильтра [~>] %s'.red, allow.message)
+        if(msgobj.type == 'conv'){
+          bot.sendmsg('conv', msgobj.id, bot.getAnswer(msgobj)+allow.message);
         }else{
-          msgevent.emit(cmd[0].toLowerCase(), msgobj);
+          bot.sendmsg('user', msgobj.id, allow.message)
         }
       }
-    }
-    msgevent.emit('newmsg', msgobj);
-    amsgevent.emit(msgobj.msg.full.toLowerCase(), msgobj);
+    })
   }
   };

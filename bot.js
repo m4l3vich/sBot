@@ -42,7 +42,7 @@ if(!process.version.startsWith('v6')){
                '[init] Сейчас sBot гарантированно работает на Node.js версии 6.x',
                '[init] При возникновении проблем напишите в https://github.com/m4l3vich/sBot/issues'].join('\n').red)
 };
-global.use = function(msg, next){
+global.use = function(msg, botname, next){
   next(true)
 }
 
@@ -317,7 +317,6 @@ const bot = {
             }
           }
         }
-        msgevent.emit('newmsg', msgobj);
         amsgevent.emit(msgobj.msg.full.toLowerCase(), msgobj);
       }else if(allow instanceof Error && allow.message){
         console.log('[use] Сообщение фильтра [~>] %s'.red, allow.message)

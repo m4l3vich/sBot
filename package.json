@@ -19,6 +19,7 @@
   "dependencies": {
     "colors": "latest",
     "request": "latest",
-    "closest-str": "latest"
+    "closest-str": "latest",
+    "moment": "latest"
   }
 }

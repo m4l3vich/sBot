@@ -258,13 +258,14 @@ const bot = {
                 break;
               case 4:  // Incoming message
                 var isConv = false;
-                var convName = '', msg = '', userid = 0;
+                var convName = '', msg = '', userid = 0, fwd = [];
                 if(ans[7] && ans[7].from){userid = ans[7]['from'];ans[3] -= 2000000000;isConv = true}
                 else{userid = ans[3]}
+
+                if(ans[7] && ans[7].fwd){fwd = ans[7].fwd.split(',').map(e => e.split('_')[1])}
                 if(isConv){convName = ans[5]}
+
                 if(!sentids.includes(ans[1])){
-                  // NOTE
-                  console.log(userid, global.authid, userid == global.authid)
                   pu(userid).then(result => {
                     resobj = {
                       type: isConv ? 'conv' : 'user',

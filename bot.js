@@ -18,6 +18,7 @@ var colors = require('colors');
 var r = require('request');
 var api = require('./api');
 var moment = require('moment');
+var closest = require('closest-str');
 var sentids = [];
 
 var VK = {
@@ -38,7 +39,6 @@ var VK = {
     return api.upload(t, data, callback)
   }
 };
-const closest = require('closest-str');
 console.log(greet.join('\n').green);
 if(!process.version.startsWith('v6')){
   console.log(['[warning] Внимание! Вы используете Node.js версии, отличной от 6.x.x',
@@ -75,6 +75,9 @@ var dict = {
 
 const bot = {
   lpevent, msgevent, amsgevent, dict, VK, api, colors,
+  status(newstatus){
+    api.call('status.set', {text: newstatus})
+  },
   authid(){return global.authid},
   botname(){return global.botname},
   version: {
@@ -134,7 +137,7 @@ const bot = {
         //Online loop
         console.log(`[${il.ts()} | init]`.green,`Запуск цикла установки онлайна...`);
         api.call('account.setOnline', {});
-        setInterval(function(){api.call('account.setOnline')}, 300000);
+        setInterval(function(){api.call('account.setOnline')}, 270000);
       },
       sendmsg(type, id, msg, attach, sid, callback){
         if (type == 'conv') {id = id + 2000000000}

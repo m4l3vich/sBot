@@ -1,7 +1,7 @@
 process.stdout.setEncoding('utf8');
 const greet = [
   '╔═════════════════════════════╗',
-  '║   sBot v2.3.0 Europium DEV  ║',
+  '║     sBot v2.3.0 Europium    ║',
   '║    Made by m4l3vich, 2017   ║',
   '╚═════════════════════════════╝',
   ''
@@ -183,7 +183,7 @@ const bot = {
             }else{
               api.call('users.get', {user_ids: userid}).then(res => {
                 global.cache[userid] = [res[0].first_name, res[0].last_name];
-                console.log(`[${il.ts} | cache] Пользователь ${userid} кэширован`);
+                console.log(`[${il.ts()} | cache] Пользователь ${userid} кэширован`.green);
                 fs.writeFile('cache.json', JSON.stringify(global.cache, null, 2), null);
                 resolve({id: userid, fname: res[0].first_name, lname: res[0].last_name});
               })

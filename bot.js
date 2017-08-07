@@ -1,7 +1,7 @@
 process.stdout.setEncoding('utf8');
 const greet = [
   '╔═════════════════════════════╗',
-  '║     sBot v2.3.0 Europium    ║',
+  '║     sBot v2.3.1 Europium    ║',
   '║    Made by m4l3vich, 2017   ║',
   '╚═════════════════════════════╝',
   ''
@@ -118,15 +118,15 @@ const bot = {
         if(err){
           fs.writeFile('cache.json', '{\n}', function(err){
             if(err){console.log(`[${il.ts()} | init]`.red,`Ошибка при создании файла кэша`)}
-            else{console.log(`[${il.ts()} | init]`.green,`Создан файл кэша`)}})
+            else{console.log(`[${il.ts()} | init]`.green,`Создан файл кэша`); global.cache = {};}})
         }else{
           fs.readFile('cache.json', 'utf-8', function(err, file){
             try{global.cache = JSON.parse(file);
               console.log(`[${il.ts()} | init]`.green,`Загружено ${colors.green(Object.keys(global.cache).length+' пользователей')} из кэша`);
             }catch(e){
               console.log(`[${il.ts()} | init] Файл кэша поврежден, идёт перезапись...`.red);
-              fs.writeFile('cache.json', '{\n}', function(err){if(err){console.log('[init]'.red,' Ошибка при перезаписи файла кэша')}
-              else{console.log('[init]'.green,'Файл кэша успешно перезаписан')}})
+              fs.writeFile('cache.json', '{\n}', function(err){if(err){console.log(`[${il.ts()} | init]`.red,'Ошибка при перезаписи файла кэша')}
+              else{console.log(`[${il.ts()} | init]`.green,'Файл кэша успешно перезаписан'); global.cache = {};}})
             }
           });
         }
@@ -258,11 +258,11 @@ const bot = {
                 break;
               case 4:  // Incoming message
                 var isConv = false;
-                var convName = '', msg = '', userid = 0, fwd = [];
+                var convName = '', msg = '', userid = 0, forwarded = [];
                 if(ans[7] && ans[7].from){userid = ans[7]['from'];ans[3] -= 2000000000;isConv = true}
                 else{userid = ans[3]}
 
-                if(ans[7] && ans[7].fwd){fwd = ans[7].fwd.split(',').map(e => e.split('_')[1])}
+                if(ans[7] && ans[7].fwd){forwarded = ans[7].fwd.split(',').map(e => e.split('_')[1])}
                 if(isConv){convName = ans[5]}
 
                 if(!sentids.includes(ans[1])){
@@ -271,6 +271,7 @@ const bot = {
                       type: isConv ? 'conv' : 'user',
                       id: ans[3],
                       msgid: ans[1],
+                      fwd: forwarded,
                       msg: {
                         full: ans[6],
                         args: bot.getArgs(ans[6], isConv)

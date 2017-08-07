@@ -13,10 +13,13 @@ const lpevent = new events(); // LongPoll events
 const msgevent = new events(); // Message events
 const amsgevent = new events(); // All messages events
 
-const fs = require('fs');
-const colors = require('colors');
-const r = require('request');
-const api = require('./api');
+var fs = require('fs');
+var colors = require('colors');
+var r = require('request');
+var api = require('./api');
+var moment = require('moment');
+var sentids = [];
+
 var VK = {
   cnotified: false,
   unotified: false,
@@ -38,9 +41,9 @@ var VK = {
 const closest = require('closest-str');
 console.log(greet.join('\n').green);
 if(!process.version.startsWith('v6')){
-  console.log(['[init] Внимание! Вы используете Node.js версии, отличной от 6.x.x',
-               '[init] Сейчас sBot гарантированно работает на Node.js версии 6.x',
-               '[init] При возникновении проблем напишите в https://github.com/m4l3vich/sBot/issues'].join('\n').red)
+  console.log(['[warning] Внимание! Вы используете Node.js версии, отличной от 6.x.x',
+               '[warning] Сейчас sBot гарантированно работает на Node.js версии 6.x',
+               '[warning] При возникновении проблем напишите в https://github.com/m4l3vich/sBot/issues'].join('\n').red)
 };
 global.use = function(msg, botname, next){
   next(true)
@@ -99,26 +102,26 @@ const bot = {
     closest.setlow('false');
     global.botname = opts.botname.map(e => e.toLowerCase());
     //Authorize user
-    console.log('[init]'.green,' Получение информации об аккаунте...');
+    console.log(`[${il.ts()} | init]`.green,`Получение информации об аккаунте...`);
     api.call('users.get', {}).then(res =>{
       authid = res[0].id
-      console.log('[init]'.green,' Успешно авторизовано как',res[0].first_name,res[0].last_name,'(ID: '+res[0].id+')');
+      console.log(`[${il.ts()} | init]`.green,`Успешно авторизовано как ${colors.green(res[0].first_name+' '+res[0].last_name+' (ID: '+res[0].id+')')}`);
     });
       //Set status
       api.call('status.set', {text: opts.status ? opts.status : 'sBot '+bot.version.codenum, group_id: 0});
       //Load cache
-      console.log('[init]'.green,' Загрузка кэша пользователей...');
+      console.log(`[${il.ts()} | init]`.green,`Загрузка кэша пользователей...`);
       fs.access('cache.json', fs.constants.F_OK, function(err){
         if(err){
           fs.writeFile('cache.json', '{\n}', function(err){
-            if(err){console.log('[init]'.red,' Ошибка при создании файла кэша')}
-            else{console.log('[init]'.green,' Создан файл кэша')}})
+            if(err){console.log(`[${il.ts()} | init]`.red,`Ошибка при создании файла кэша`)}
+            else{console.log(`[${il.ts()} | init]`.green,`Создан файл кэша`)}})
         }else{
           fs.readFile('cache.json', 'utf-8', function(err, file){
             try{global.cache = JSON.parse(file);
-              console.log('[init]'.green,' Загружено',Object.keys(global.cache).length,'пользователей из кэша');
+              console.log(`[${il.ts()} | init]`.green,`Загружено ${colors.green(Object.keys(global.cache).length+' пользователей')} из кэша`);
             }catch(e){
-              console.log('[init] Файл кэша поврежден, идёт перезапись...'.red);
+              console.log(`[${il.ts()} | init] Файл кэша поврежден, идёт перезапись...`.red);
               fs.writeFile('cache.json', '{\n}', function(err){if(err){console.log('[init]'.red,' Ошибка при перезаписи файла кэша')}
               else{console.log('[init]'.green,'Файл кэша успешно перезаписан')}})
             }
@@ -127,9 +130,9 @@ const bot = {
       });
       //Initialize LongPoll connection
       api.call('messages.getLongPollServer', {use_ssl: 1}).then(res => {
-        console.log('[init]'.green,' Запущен цикл LongPoll');il.longpollLoop(res);});
+        console.log(`[${il.ts()} | init]`.green,`Запуск цикла LongPoll...`);il.longpollLoop(res);});
         //Online loop
-        console.log('[init]'.green,' Запущен цикл установки онлайна');
+        console.log(`[${il.ts()} | init]`.green,`Запуск цикла установки онлайна...`);
         api.call('account.setOnline', {});
         setInterval(function(){api.call('account.setOnline')}, 300000);
       },
@@ -140,14 +143,21 @@ const bot = {
         else {obj = {peer_id: id, message: msg}}
         api.call('messages.send', obj)
         .then(res => {
-          if (res.error) {
-            switch (res.error.error_code) {
-              case 902:console.log('[msg] Ошибка отправки пользователю %s: Запрещено настройками приватности'.red, id);break;
-              case 900:console.log('[msg] Ошибка отправки пользователю %s: Добавлен в чёрный список'.red, id);break;
-              default:console.log('[msg] Произошла неизвестная ошибка: %s'.red, id)
+          if(res.error){
+            switch(res.error.error_code){
+              case 902:
+                console.log(`[${il.ts()} | msg] Ошибка при отправке: Запрещено настройками приватности`.red);break;
+              case 900:
+                console.log(`[${il.ts()} | msg] Ошибка при отправке: Добавлен в чёрный список`.red);break;
+              default:
+                console.log(`[${il.ts()} | msg] Ошибка при отправке: ${error.msg}`.red);break;
             }
           }
-          else {console.log('[msg] Отправлено [=>] %s'.cyan, sid ? '(Стикер #'+sid+')' : il.msgmask(id, msg));if (callback) {callback()}}
+          else{
+            console.log(`[${il.ts()} | msg =>] ${sid ? '(Стикер #'+sid+')' : il.msgmask(id, msg)}`.cyan);
+            sentids.push(res)
+            if(callback) callback()
+          }
         })
       },
       use(callback){
@@ -157,6 +167,7 @@ const bot = {
     module.exports = bot;
     const il = {
       msgmask(id,msg){return id+': '+msg;},
+      ts(){return moment().format('DD.MM.YY HH:mm:ss')},
       lpmask(obj){
         if(obj.type == 'conv'){return `[${obj.name} | ${obj.id}] ${obj.s.fname} ${obj.s.lname}: ${obj.msg.full}`}
         else{return `[${obj.s.fname} ${obj.s.lname}, ${obj.id}]: ${obj.msg.full}`}
@@ -169,7 +180,7 @@ const bot = {
             }else{
               api.call('users.get', {user_ids: userid}).then(res => {
                 global.cache[userid] = [res[0].first_name, res[0].last_name];
-                console.log('[cache] Пользователь', userid, 'кэширован');
+                console.log(`[${il.ts} | cache] Пользователь ${userid} кэширован`);
                 fs.writeFile('cache.json', JSON.stringify(global.cache, null, 2), null);
                 resolve({id: userid, fname: res[0].first_name, lname: res[0].last_name});
               })
@@ -190,35 +201,35 @@ const bot = {
               case 'chat_create':       // Someone created chat
                 truncate(ans[7].from)
                 .then(name => {
-                  console.log(`[lpevent]`.inverse, `${name.t} создал беседу "${ans[7]['source_text']}"`.green)
+                  console.log(`[${il.ts()} | lpevent]`.inverse, `${name.t} создал беседу "${ans[7]['source_text']}"`.green)
                   lpevent.emit('chat_create', {name: ans[7]['source_text'], admin: name.f, peer_id: ans[3]});
                 })
                 break;
               case 'chat_title_update': // Someone updated chat name
                 truncate(ans[7].from)
                 .then(name => {
-                  console.log(`[lpevent]`.inverse, `${name.t} изменил название беседы с "${ans[7]['source_old_text']}" на "${ans[7]['source_text']}"`.green)
+                  console.log(`[${il.ts()} | lpevent]`.inverse, `${name.t} изменил название беседы с "${ans[7]['source_old_text']}" на "${ans[7]['source_text']}"`.green)
                   lpevent.emit('chat_title_update', {oldname: ans[7]['source_old_text'], newname: ans[7]['source_text'], user: name.f, peer_id: ans[3]-2000000000});
                 })
                 break;
               case 'chat_photo_update': // Someone updated chat photo
                 truncate(ans[7].from)
                 .then(name => {
-                  console.log(`[lpevent]`.inverse, `${name.t} изменил фото в беседе с id ${ans[3]-2000000000}`.green)
+                  console.log(`[${il.ts()} | lpevent]`.inverse, `${name.t} изменил фото в беседе с id ${ans[3]-2000000000}`.green)
                   lpevent.emit('chat_photo_update', {photo: ans[7]['attach1'], user: name.f, peer_id: ans[3]-2000000000});
                 })
                 break;
               case 'chat_invite_user':  // Someone invited user into chat
                 Promise.all([truncate(ans[7].from), truncate(ans[7].source_mid, 'gen')])
                 .then(n =>{
-                  console.log(`[lpevent]`.inverse, `${n[0].t} пригласил ${n[1].t} в беседу с id ${ans[3]-2000000000}`.green)
+                  console.log(`[${il.ts()} | lpevent]`.inverse, `${n[0].t} пригласил ${n[1].t} в беседу с id ${ans[3]-2000000000}`.green)
                   lpevent.emit('chat_invite_user', {inviter: n[0].f, invited: n[1].f, peer_id: ans[3]-2000000000});
                 })
                 break;
               case 'chat_kick_user':    // Someone kicked user from chat
                 Promise.all([truncate(ans[7].from), truncate(ans[7].source_mid, 'gen')])
                 .then(n =>{
-                  console.log(`[lpevent]`.inverse, `${n[0].t} исключил ${n[1].t} из беседы с id ${ans[3]-2000000000}`.green)
+                  console.log(`[${il.ts()} | lpevent]`.inverse, `${n[0].t} исключил ${n[1].t} из беседы с id ${ans[3]-2000000000}`.green)
                   lpevent.emit('chat_kick_user', {kicker: n[0].f, kicked: n[1].f, peer_id: ans[3]-2000000000});
                 })
                 break;
@@ -248,7 +259,9 @@ const bot = {
                 if(ans[7] && ans[7].from){userid = ans[7]['from'];ans[3] -= 2000000000;isConv = true}
                 else{userid = ans[3]}
                 if(isConv){convName = ans[5]}
-                if(ans[7].from != global.authid){
+                if(!sentids.includes(ans[1])){
+                  // NOTE
+                  console.log(userid, global.authid, userid == global.authid)
                   pu(userid).then(result => {
                     resobj = {
                       type: isConv ? 'conv' : 'user',
@@ -264,8 +277,10 @@ const bot = {
                       }
                     };
                     if(isConv){resobj['name'] = convName}
-                    console.log('[msg] Получено [<=] %s'.yellow,il.lpmask(resobj));il.parse(resobj);
+                    console.log(`[${il.ts()} | msg <=] ${il.lpmask(resobj)}`.yellow);il.parse(resobj);
                   })
+                }else{
+                  sentids.splice(sentids.indexOf(ans[1]), 1)
                 }
                 break;
               default:
@@ -286,7 +301,7 @@ const bot = {
         else if(answer.failed == 1){il.longpollLoop({key: info.key, server: info.server, ts: answer.ts})}
         else if(answer.failed == 2 || answer.failed == 3){
           api.call('messages.getLongPollServer', {use_ssl: 1}).then(res => {
-            console.log('[init]'.green,' Цикл LongPoll перезапущен с новым ключом');il.longpollLoop(res);
+            console.log(`${colors.green('['+il.ts()+'| init]')} Цикл LongPoll перезапущен с новым ключом`);il.longpollLoop(res);
           });
         }else{
           il.parselp(answer.updates);
@@ -319,7 +334,7 @@ const bot = {
         }
         amsgevent.emit(msgobj.msg.full.toLowerCase(), msgobj);
       }else if(allow instanceof Error && allow.message){
-        console.log('[use] Сообщение фильтра [~>] %s'.red, allow.message)
+        console.log(`[${il.ts()} | filter ~>] ${allow.message}`.red)
         if(msgobj.type == 'conv'){
           bot.sendmsg('conv', msgobj.id, bot.getAnswer(msgobj)+allow.message);
         }else{

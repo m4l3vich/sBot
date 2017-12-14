@@ -23,6 +23,8 @@ class Bot extends EventEmitter {
     }
     this.start = async () => {
       var longpollParams = await api('messages.getLongPollServer', {lp_version: 2}, self.options.token)
+      self.me = await api('users.get', {}, self.options.token)
+
       async function loop (ts) {
         var longpollResponse = await rp(`https://${longpollParams.server}?act=a_check&key=${longpollParams.key}&ts=${ts}&wait=25&mode=10&version=2`)
         longpollResponse = JSON.parse(longpollResponse)
@@ -33,6 +35,7 @@ class Bot extends EventEmitter {
       }
       loop(longpollParams.ts)
     }
+    this.getMe = () => self.me
   }
 }
 
@@ -66,7 +69,9 @@ async function parser (update, self) {
     if (self.useCallback) {
       self.useCallback(messageObject)
     }
-    self.emit(update[5].toLowerCase(), messageObject)
+    if (messageObject.id !== self.me.id) {
+      self.emit(update[5].toLowerCase(), messageObject)
+    }
   }
 }
 

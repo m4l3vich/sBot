@@ -14,6 +14,13 @@ class Bot extends EventEmitter {
     }
 
     var self = this
+    this.use = (callback) => {
+      if (typeof callback === 'function') {
+        this.useCallback = callback
+      } else {
+        throw new Error('Invalid callback')
+      }
+    }
     this.start = async () => {
       var longpollParams = await api('messages.getLongPollServer', {lp_version: 2}, self.options.token)
       async function loop (ts) {
@@ -45,7 +52,7 @@ async function parser (update, self) {
         }
       }
     }
-    self.emit(update[5].toLowerCase(), {
+    var messageObject = {
       messageId: update[1],
       peerId: update[3],
       text: update[5],
@@ -54,7 +61,12 @@ async function parser (update, self) {
       answer: (text) => {
         api('messages.send', {peer_id: update[3], message: text}, self.options.token)
       }
-    })
+    }
+
+    if (self.useCallback) {
+      self.useCallback(messageObject)
+    }
+    self.emit(update[5].toLowerCase(), messageObject)
   }
 }
 

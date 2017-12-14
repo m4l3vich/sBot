@@ -45,7 +45,7 @@ async function parser (update, self) {
         }
       }
     }
-    self.emit(update[5], {
+    self.emit(update[5].toLowerCase(), {
       messageId: update[1],
       peerId: update[3],
       text: update[5],

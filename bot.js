@@ -8,7 +8,11 @@ class Bot extends EventEmitter {
     if (typeof options === 'object') {
       this.options = options
     } else if (typeof options === 'string') {
-      this.options = {token: options}
+      this.options = {
+        botname: '',
+        dict: [],
+        token: options
+      }
     } else {
       throw new Error('Invalid options type')
     }
@@ -70,7 +74,13 @@ async function parser (update, self) {
       self.useCallback(messageObject)
     }
     if (messageObject.id !== self.me.id) {
-      self.emit(update[5].toLowerCase(), messageObject)
+      if (self.options.botname && messageObject.text.startsWith(self.options.botname)) {
+        self.emit(update[5].toLowerCase(), messageObject)
+      } else if (self.options.dict) {
+        // TODO dictionary autoanswer
+      } else {
+        self.emit(update[5].toLowerCase(), messageObject)
+      }
     }
   }
 }

@@ -114,8 +114,13 @@ async function parser (update, self) {
       from: user,
       isOut: Boolean(update[2] & 2),
       attaches: attachments,
-      answer: (text) => {
-        api('messages.send', {peer_id: update[3], message: text}, self.options.token)
+      answer: (text, attach) => {
+        var attachment = []
+        if (Array.isArray(attach)) attachment = attach
+        else if (!attach) attachment = undefined
+        else attachment[0] = attach
+
+        api('messages.send', {peer_id: update[3], message: text, attachment}, self.options.token)
       }
     }
 

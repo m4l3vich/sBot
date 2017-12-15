@@ -102,7 +102,8 @@ async function parser (update, self) {
       messageId: update[1],
       peerId: update[3],
       text: update[5],
-      from: user[0],
+      from: update[2] & 2 ? self.me : user[0],
+      isOut: Boolean(update[2] & 2),
       attaches: attachments,
       answer: (text) => {
         api('messages.send', {peer_id: update[3], message: text}, self.options.token)

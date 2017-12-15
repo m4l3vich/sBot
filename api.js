@@ -8,7 +8,7 @@ var qs = require('querystring')
 * @param {String} [token] - VK access_token
 * @return {Object} response
 */
-module.exports = async function (method, parameters, token) {
+module.exports = async (method, parameters, token) => {
   parameters.access_token = token
   var resp = await rp(`https://api.vk.com/method/${method}?${qs.stringify(parameters)}&v=5.69`)
   var respjson = JSON.parse(resp)

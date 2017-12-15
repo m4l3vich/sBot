@@ -76,7 +76,9 @@ class Bot extends EventEmitter {
       loop(longpollParams.ts)
     }
 
-    this.api = api
+    this.api = (method, parameters) => {
+      api(method, parameters, self.options.token)
+    }
   }
 }
 

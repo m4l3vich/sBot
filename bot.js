@@ -6,7 +6,7 @@ var closest = require('closest-str')
 class Bot extends EventEmitter {
   /**
   * Create bot instance
-  * @param {Object|String} options - Options for creating bot instance (token; botname and token)
+  * @param {Object|String} options - Options for creating bot instance (token/botname and token)
   */
   constructor (options) {
     super()

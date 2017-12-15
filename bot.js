@@ -1,5 +1,6 @@
 var rp = require('request-promise')
 var api = require('./api')
+var uploader = require('./uploader')
 var EventEmitter = require('events')
 var closest = require('closest-str')
 
@@ -10,14 +11,16 @@ class Bot extends EventEmitter {
   */
   constructor (options) {
     super()
-
+    this.upload = uploader
     if (typeof options === 'object') {
       this.options = options
+      uploader.token = options.token
     } else if (typeof options === 'string') {
       this.options = {
         botname: '',
         token: options
       }
+      uploader.token = options
     } else {
       throw new Error('Invalid options type')
     }

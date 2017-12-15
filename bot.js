@@ -84,7 +84,13 @@ class Bot extends EventEmitter {
 
 async function parser (update, self) {
   if (update[0] === 4) {
-    var user = await api('users.get', {user_ids: update[6].from || update[3]})
+    var user
+    if (update[2] & 2) {
+      user = self.me
+    } else {
+      var u = await api('users.get', {user_ids: update[6].from || update[3]})
+      user = u[0]
+    }
     var attachments = []
     if (update[6]) {
       for (var i = 1; i < 11; i++) {
@@ -102,7 +108,7 @@ async function parser (update, self) {
       messageId: update[1],
       peerId: update[3],
       text: update[5],
-      from: update[2] & 2 ? self.me : user[0],
+      from: user,
       isOut: Boolean(update[2] & 2),
       attaches: attachments,
       answer: (text) => {

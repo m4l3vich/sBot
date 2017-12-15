@@ -74,8 +74,6 @@ class Bot extends EventEmitter {
       }
       loop(longpollParams.ts)
     }
-
-    this.closest = closest
   }
 }
 

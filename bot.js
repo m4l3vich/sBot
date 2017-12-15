@@ -114,13 +114,18 @@ async function parser (update, self) {
       from: user,
       isOut: Boolean(update[2] & 2),
       attaches: attachments,
+      /**
+      * Answer to a message
+      * @param {String} text - Text to answer
+      * @param {Array|String} attach - List of attachments
+      */
       answer: (text, attach) => {
         var attachment = []
         if (Array.isArray(attach)) attachment = attach
         else if (!attach) attachment = undefined
         else attachment[0] = attach
 
-        api('messages.send', {peer_id: update[3], message: text, attachment}, self.options.token)
+        api('messages.send', {peer_id: update[3], message: text, attachment.join(',')}, self.options.token)
       }
     }
 

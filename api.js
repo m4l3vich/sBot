@@ -3,9 +3,9 @@ var qs = require('querystring')
 
 /**
 * Execute VKAPI method
-* @param {String} method
-* @param {Object} parameters
-* @param {String} [token]
+* @param {String} method - Method that will be executed
+* @param {Object} parameters - Method parameters
+* @param {String} [token] - VK access_token
 * @return {Object} response
 */
 module.exports = async function (method, parameters, token) {

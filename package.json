@@ -4,7 +4,7 @@
   "description": "Чат-бот для ВКонтакте, написанный на Node.js",
   "main": "bot.js",
   "scripts": {
-    "start": "node . --harmony_array_includes"
+    "start": "node ."
   },
   "repository": {
     "type": "git",

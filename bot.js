@@ -1,16 +1,21 @@
 var rp = require('request-promise')
 var api = require('./api')
 var EventEmitter = require('events')
+var closest = require('closest-str')
 
 class Bot extends EventEmitter {
+  /**
+  * Create bot instance
+  * @param {Object|String} options - Options for creating bot instance (token; botname and token)
+  */
   constructor (options) {
     super()
+
     if (typeof options === 'object') {
       this.options = options
     } else if (typeof options === 'string') {
       this.options = {
         botname: '',
-        dict: [],
         token: options
       }
     } else {
@@ -18,6 +23,10 @@ class Bot extends EventEmitter {
     }
 
     var self = this
+    /**
+    * Set callback, that will be applied to every new message
+    * @param {Function} callback - Function that will be executed
+    */
     this.use = (callback) => {
       if (typeof callback === 'function') {
         this.useCallback = callback
@@ -25,6 +34,32 @@ class Bot extends EventEmitter {
         throw new Error('Invalid callback')
       }
     }
+    /**
+    * Returns current VK user
+    * @return {Object} - User object (id, first_name, last_name)
+    */
+    this.getMe = () => self.me
+
+    /**
+    * Set dictionary for autoanswering
+    * @param {Object} dict - Object in format {"key": "value"}
+    * @param {Number} percent - Percentage of dictionary element match required for triggering (float, default = 1)
+    */
+    this.setDict = (dict, percent) => {
+      if (dict) {
+        self.isDictSet = true
+        closest.setdict(dict)
+        closest.setlow(percent || 1)
+        closest.setlow('nomatch')
+        closest.setmax(1)
+      } else {
+        throw new Error('No dictionary passed')
+      }
+    }
+
+    /**
+    * Start bot
+    */
     this.start = async () => {
       var longpollParams = await api('messages.getLongPollServer', {lp_version: 2}, self.options.token)
       self.me = await api('users.get', {}, self.options.token)
@@ -39,7 +74,8 @@ class Bot extends EventEmitter {
       }
       loop(longpollParams.ts)
     }
-    this.getMe = () => self.me
+
+    this.closest = closest
   }
 }
 
@@ -73,11 +109,11 @@ async function parser (update, self) {
     if (self.useCallback) {
       self.useCallback(messageObject)
     }
-    if (messageObject.id !== self.me.id) {
+    if (!(update[2] & 2)) {
       if (self.options.botname && messageObject.text.startsWith(self.options.botname)) {
         self.emit(update[5].toLowerCase(), messageObject)
-      } else if (self.options.dict) {
-        // TODO dictionary autoanswer
+      } else if (self.isDictSet && closest.request(messageObject.text).answer !== 'nomatch') {
+        messageObject.answer(closest.request(messageObject.text).answer)
       } else {
         self.emit(update[5].toLowerCase(), messageObject)
       }

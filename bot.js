@@ -61,6 +61,21 @@ class Bot extends EventEmitter {
     }
 
     /**
+    * Send a message
+    * @param {Number|String} id - ID where to send a message
+    * @param {String} text - Message text
+    * @param {Array|String} attach - List of attachments
+    */
+    this.sendMessage = (id, text, attach) => {
+      var attachment = []
+      if (Array.isArray(attach)) attachment = attach
+      else if (!attach) attachment = undefined
+      else attachment[0] = attach
+
+      api('messages.send', {peer_id: id, message: text, attachment: attachment.join(',')}, self.options.token)
+    }
+
+    /**
     * Start bot
     */
     this.start = async () => {
@@ -125,7 +140,7 @@ async function parser (update, self) {
         else if (!attach) attachment = undefined
         else attachment[0] = attach
 
-        api('messages.send', {peer_id: update[3], message: text, attachment.join(',')}, self.options.token)
+        api('messages.send', {peer_id: update[3], message: text, attachment: attachment.join(',')}, self.options.token)
       }
     }
 

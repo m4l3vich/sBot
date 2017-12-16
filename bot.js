@@ -79,8 +79,7 @@ class Bot extends EventEmitter {
     */
     this.start = async () => {
       var longpollParams = await api('messages.getLongPollServer', {lp_version: 2}, self.options.token)
-      var me = await api('users.get', {}, self.options.token)
-      self.me = me[0]
+      self.me = await getMe(self.options.token)
 
       async function loop (ts) {
         var longpollResponse = await rp(`https://${longpollParams.server}?act=a_check&key=${longpollParams.key}&ts=${ts}&wait=25&mode=10&version=2`)
@@ -94,8 +93,22 @@ class Bot extends EventEmitter {
     }
 
     this.api = (method, parameters) => {
-      api(method, parameters, self.options.token)
+      return api(method, parameters, self.options.token)
     }
+  }
+}
+
+async function getMe (token) {
+  var resp = await rp(`https://api.vk.com/method/groups.getById?access_token=${token}&v=5.69`)
+  resp = JSON.parse(resp)
+
+  if (resp.error) {
+    var user = await rp(`https://api.vk.com/method/users.get?access_token=${token}&v=5.69`)
+    user = JSON.parse(user)
+    user.mode = 'user'
+    return user.response[0]
+  } else {
+    return {id: resp.response[0].id, mode: 'group'}
   }
 }
 

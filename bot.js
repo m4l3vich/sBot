@@ -69,7 +69,6 @@ class Bot extends EventEmitter {
     this.sendMessage = (id, text, attach) => {
       var attachment = []
       if (Array.isArray(attach)) attachment = attach
-      else if (!attach) attachment = undefined
       else attachment[0] = attach
 
       api('messages.send', {peer_id: id, message: text, attachment: attachment.join(',')}, self.options.token)
@@ -137,7 +136,6 @@ async function parser (update, self) {
       answer: (text, attach) => {
         var attachment = []
         if (Array.isArray(attach)) attachment = attach
-        else if (!attach) attachment = undefined
         else attachment[0] = attach
 
         api('messages.send', {peer_id: update[3], message: text, attachment: attachment.join(',')}, self.options.token)

@@ -1,5 +1,5 @@
 {
-  "name": "sbot",
+  "name": "sbot-vk",
   "version": "3.0.0",
   "description": "Чат-бот для ВКонтакте, написанный на Node.js",
   "main": "bot.js",
@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/m4l3vich/sBot.git"
   },
-  "author": "Eugeny Malevich",
+  "author": "Eugeny Malevich <m4l3vich@mail.ru> (https://github.com/m4l3vich)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/m4l3vich/sBot/issues"

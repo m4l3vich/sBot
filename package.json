@@ -18,6 +18,7 @@
   "homepage": "https://github.com/m4l3vich/sBot#readme",
   "dependencies": {
     "closest-str": "^2.2.1",
+    "pattern-emitter": "^1.0.0",
     "request": "^2.83.0",
     "request-promise": "^4.2.2"
   }

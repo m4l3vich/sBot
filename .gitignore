@@ -3,7 +3,7 @@ ehthumbs.db
 Desktop.ini
 npm-debug.log
 node_modules/
-app.js
+index.js
 cache.json
 $RECYCLE.BIN/
 *.cab

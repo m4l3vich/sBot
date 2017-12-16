@@ -1,7 +1,7 @@
 var rp = require('request-promise')
 var api = require('./api')
 var uploader = require('./uploader')
-var EventEmitter = require('events')
+var EventEmitter = require('pattern-emitter')
 var closest = require('closest-str')
 
 class Bot extends EventEmitter {

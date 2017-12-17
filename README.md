@@ -1,4 +1,5 @@
 # sBot
+![sBot 3.0 Terbium](https://i.imgur.com/VHl5aZR.jpg)
 
 ## Установка
 Установите sBot с помощью NPM:
@@ -83,5 +84,5 @@ b.on(/^передай \[id(.+)\|(.+)] (.+)$/, message => {
   message.answer('Готово!')
 })
 ```
-  
+
 *По всем вопросам обращайтесь в [VK](https://vk.com/m4l3vich) и [Telegram](https://t.me/m4l3vich)*

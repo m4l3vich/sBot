@@ -133,4 +133,41 @@ b.on(/^передай \[id(.+)\|(.+)] (.+)$/, message => {
 })
 ```
 
+### Дополнительно
+##### Строение объекта message:
+```JavaScript
+{
+   messageId: 171,
+   peerId: 193158046,
+   text: 'hello sBot',
+   from: { id: 193158046, first_name: 'Евгений', last_name: 'Малевич' },
+   isOut: false,
+   attaches: [ { type: 'photo', attach: '193158046_456281537' } ],
+   answer: [Function: answer],
+   sticker: [Function: sticker]
+ }
+```
+- **messageId** - ID сообщения
+- **peerId** - ID отправителя (может быть ID пользователя, группы или беседы)
+- **text** - Текст сообщения
+- **from** - Объект пользователя-отправителя
+- **isOut** - Исходящее ли сообщение?
+- **attaches** - Массив с прикреплениями
+- **answer** - Функция для ответа текстом и прикреплениями
+- **sticker** - Функция для ответа стикером
+
+##### Функция message.answer()
+```JavaScript
+message.answer(text, <attach>, <forward>)
+```
+- **text** - Текст отправляемого сообщения
+- **attach** - Массив или строка с прикреплениями (напр. `['photo1234_5678', 'photo8765_4321']`)
+- **forward** - Если true, то обрабатываемое сообщение будет переслано
+
+##### Функция message.sticker()
+```JavaScript
+message.sticker(stickerId)
+```
+- **stickerId** - ID отправялемого стикера
+
 *По всем вопросам обращайтесь в [VK](https://vk.com/m4l3vich) и [Telegram](https://t.me/m4l3vich)*

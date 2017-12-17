@@ -115,7 +115,7 @@ async function getMe (token) {
 
 async function parser (update, self) {
   function next () {
-    if (self.options.botname && messageObject.text.startsWith(self.options.botname)) {
+    if (self.options.botname && messageObject.text.startsWith(self.options.botname) && update[2] & 16) {
       self.emit(update[5].toLowerCase(), messageObject)
     } else if (self.isDictSet && closest.request(messageObject.text).answer !== 'nomatch') {
       messageObject.answer(closest.request(messageObject.text).answer)

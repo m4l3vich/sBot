@@ -66,7 +66,7 @@ bot.upload.audio_message(buffer, [peer_id])
 
 #### Отправка граффити:
 ```JavaScript
-bot.upload.graffiti(buffer, [peer_id])
+bot.upload.graffiti(buffer)
 ```
 - **buffer** - [Буфер](https://nodejs.org/api/buffer.html), содержащий граффити   
 **НЕ РАБОТАЕТ В ГРУППАХ**

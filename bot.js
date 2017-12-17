@@ -80,6 +80,7 @@ class Bot extends EventEmitter {
     this.start = async () => {
       var longpollParams = await api('messages.getLongPollServer', {lp_version: 2}, self.options.token)
       self.me = await getMe(self.options.token)
+      uploader.mode = self.me.mode
 
       async function loop (ts) {
         var longpollResponse = await rp(`https://${longpollParams.server}?act=a_check&key=${longpollParams.key}&ts=${ts}&wait=25&mode=10&version=2`)

@@ -64,7 +64,7 @@ bot.upload.audio_message(buffer, [peer_id])
 - **buffer** - [Буфер](https://nodejs.org/api/buffer.html), содержащий голосовое сообщение   
 - **peer_id** - ID, на который затем будет отправлено голосовое сообщение **ТОЛЬКО ДЛЯ ГРУПП**
 
-#### Отправка голосовых сообщений:
+#### Отправка граффити:
 ```JavaScript
 bot.upload.graffiti(buffer, [peer_id])
 ```

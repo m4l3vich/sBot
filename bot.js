@@ -163,6 +163,13 @@ async function parser (update, self) {
         else attachment[0] = attach
 
         api('messages.send', {peer_id: update[3], message: text, attachment: attachment.join(',')}, self.options.token)
+      },
+      /**
+      * Answer to a message using sticker
+      * @param {Number} stickerId - ID of sticker
+      */
+      sticker: (stickerId) => {
+        api('messages.send', {peer_id: update[3], sticker_id: stickerId}, self.options.token)
       }
     }
 

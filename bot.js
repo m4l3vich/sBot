@@ -156,13 +156,19 @@ async function parser (update, self) {
       * Answer to a message
       * @param {String} text - Text to answer
       * @param {Array|String} attach - List of attachments
+      * @param {Boolean} forward - If true, the source message will be forwarded
       */
-      answer: (text, attach) => {
+      answer: (text, attach, forward) => {
         var attachment = []
         if (Array.isArray(attach)) attachment = attach
         else attachment[0] = attach
 
-        api('messages.send', {peer_id: update[3], message: text, attachment: attachment.join(',')}, self.options.token)
+        api('messages.send', {
+          peer_id: update[3],
+          message: text,
+          attachment: attachment.join(','),
+          forward_messages: forward ? update[1] : undefined
+        }, self.options.token)
       },
       /**
       * Answer to a message using sticker

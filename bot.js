@@ -114,6 +114,16 @@ async function getMe (token) {
 }
 
 async function parser (update, self) {
+  function next () {
+    if (self.options.botname && messageObject.text.startsWith(self.options.botname)) {
+      self.emit(update[5].toLowerCase(), messageObject)
+    } else if (self.isDictSet && closest.request(messageObject.text).answer !== 'nomatch') {
+      messageObject.answer(closest.request(messageObject.text).answer)
+    } else {
+      self.emit(update[5].toLowerCase(), messageObject)
+    }
+  }
+
   if (update[0] === 4) {
     var user
     if (update[2] & 2) {
@@ -157,16 +167,9 @@ async function parser (update, self) {
     }
 
     if (self.useCallback) {
-      self.useCallback(messageObject)
-    }
-    if (!(update[2] & 2)) {
-      if (self.options.botname && messageObject.text.startsWith(self.options.botname)) {
-        self.emit(update[5].toLowerCase(), messageObject)
-      } else if (self.isDictSet && closest.request(messageObject.text).answer !== 'nomatch') {
-        messageObject.answer(closest.request(messageObject.text).answer)
-      } else {
-        self.emit(update[5].toLowerCase(), messageObject)
-      }
+      self.useCallback(messageObject, next)
+    } else if (!(update[2] & 2)) {
+      next()
     }
   }
 }

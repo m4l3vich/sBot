@@ -1,6 +1,6 @@
 {
   "name": "sbot-vk",
-  "version": "3.1.5",
+  "version": "3.2.5",
   "description": "Легкий и функциональный бот для ВКонтакте",
   "main": "bot.js",
   "scripts": {

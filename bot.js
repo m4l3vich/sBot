@@ -4,6 +4,14 @@ var uploader = require('./uploader')
 var EventEmitter = require('pattern-emitter')
 var closest = require('closest-str')
 
+function debugLog() {
+  if(process.isDebugging) {
+    var args = Array.from(arguments)
+    args.unshift(`[DEBUG]`)
+    console.log.apply(console,args)
+  }
+}
+
 class Bot extends EventEmitter {
   /**
   * Create bot instance
@@ -18,12 +26,15 @@ class Bot extends EventEmitter {
     } else if (typeof options === 'string') {
       this.options = {
         botname: '',
-        token: options
+        token: options,
+        debug: false
       }
       uploader.token = options
     } else {
       throw new Error('Invalid options type')
     }
+
+    process.isDebugging = this.options.debug
 
     var self = this
     /**
@@ -50,6 +61,7 @@ class Bot extends EventEmitter {
     */
     this.setDict = (dict, percent) => {
       if (dict) {
+        debugLog('Set dictionary')
         self.isDictSet = true
         closest.setdict(dict)
         closest.setlow(percent || 1)
@@ -71,6 +83,7 @@ class Bot extends EventEmitter {
       if (Array.isArray(attach)) attachment = attach
       else attachment[0] = attach
 
+      debugLog('Sending message',id,text,attachment)
       api('messages.send', {peer_id: id, message: text, attachment: attachment.join(',')}, self.options.token)
     }
 
@@ -78,12 +91,14 @@ class Bot extends EventEmitter {
     * Start bot
     */
     this.start = async () => {
+      debugLog('Connecting to LongPoll server')
       var longpollParams = await api('messages.getLongPollServer', {lp_version: 2}, self.options.token)
       self.me = await getMe(self.options.token)
       uploader.mode = self.me.mode
 
       async function loop (ts) {
         var longpollResponse = await rp(`https://${longpollParams.server}?act=a_check&key=${longpollParams.key}&ts=${ts}&wait=25&mode=10&version=2`)
+        debugLog('Got LongPoll response:', longpollResponse)
         longpollResponse = JSON.parse(longpollResponse)
         longpollResponse.updates.map((e) => {
           parser(e, self)
@@ -94,21 +109,25 @@ class Bot extends EventEmitter {
     }
 
     this.api = (method, parameters) => {
+      debugLog('Executing API method',method, parameters)
       return api(method, parameters, self.options.token)
     }
   }
 }
 
 async function getMe (token) {
+  debugLog('Getting current user/group')
   var resp = await rp(`https://api.vk.com/method/groups.getById?access_token=${token}&v=5.69`)
   resp = JSON.parse(resp)
 
   if (resp.error) {
+    debugLog('Set user mode')
     var user = await rp(`https://api.vk.com/method/users.get?access_token=${token}&v=5.69`)
     user = JSON.parse(user)
     user.mode = 'user'
     return user.response[0]
   } else {
+    debugLog('Set group mode')
     return {id: resp.response[0].id, mode: 'group'}
   }
 }
@@ -116,10 +135,13 @@ async function getMe (token) {
 async function parser (update, self) {
   function next () {
     if (self.options.botname && messageObject.text.startsWith(self.options.botname) && update[2] & 16) {
+      debugLog('Botname triggered')
       self.emit(update[5].toLowerCase(), messageObject)
     } else if (self.isDictSet && closest.request(messageObject.text).answer !== 'nomatch') {
+      debugLog('Dictionary triggered')
       messageObject.answer(closest.request(messageObject.text).answer)
     } else {
+      debugLog(`Emitting "${update[5].toLowerCase()}":`,messageObject)
       self.emit(update[5].toLowerCase(), messageObject)
     }
   }
@@ -159,6 +181,7 @@ async function parser (update, self) {
       * @param {Boolean} forward - If true, the source message will be forwarded
       */
       answer: (text, attach, forward) => {
+        debugLog('Answering with ', text, attach, forward)
         var attachment = []
         if (Array.isArray(attach)) attachment = attach
         else attachment[0] = attach
@@ -175,11 +198,13 @@ async function parser (update, self) {
       * @param {Number} stickerId - ID of sticker
       */
       sticker: (stickerId) => {
+        debugLog('Answering with sticker', stickerId)
         api('messages.send', {peer_id: update[3], sticker_id: stickerId}, self.options.token)
       }
     }
 
     if (self.useCallback) {
+      debugLog('Passing messageObject to use()')
       self.useCallback(messageObject, next)
     } else if (!(update[2] & 2)) {
       next()

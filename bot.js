@@ -190,7 +190,7 @@ class Bot extends EventEmitter {
               peer_id: update[3],
               message: text,
               attachment: attachment.join(','),
-              forward_messages: forward ? update[6].fwd : undefined
+              forward_messages: forward ? update[1] : undefined
             }, this.options.token)
           },
           /**

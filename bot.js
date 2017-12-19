@@ -21,11 +21,15 @@ class Bot extends EventEmitter {
     super()
     this.upload = uploader
     if (typeof options === 'object') {
-      this.options = options
+      this.options = {
+        botname: options.botname || undefined,
+        token: options.token,
+        debug: options.debug || false
+      }
       uploader.token = options.token
     } else if (typeof options === 'string') {
       this.options = {
-        botname: '',
+        botname: undefined,
         token: options,
         debug: false
       }

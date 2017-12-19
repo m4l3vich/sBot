@@ -4,11 +4,11 @@ var uploader = require('./uploader')
 var EventEmitter = require('pattern-emitter')
 var closest = require('closest-str')
 
-function debugLog() {
-  if(process.isDebugging) {
+function debugLog () {
+  if (process.isDebugging) {
     var args = Array.from(arguments)
     args.unshift(`[DEBUG]`)
-    console.log.apply(console,args)
+    console.log.apply(console, args)
   }
 }
 
@@ -83,7 +83,7 @@ class Bot extends EventEmitter {
       if (Array.isArray(attach)) attachment = attach
       else attachment[0] = attach
 
-      debugLog('Sending message',id,text,attachment)
+      debugLog('Sending message', id, text, attachment)
       api('messages.send', {peer_id: id, message: text, attachment: attachment.join(',')}, self.options.token)
     }
 
@@ -108,7 +108,7 @@ class Bot extends EventEmitter {
     }
 
     this.api = (method, parameters) => {
-      debugLog('Executing API method',method, parameters)
+      debugLog('Executing API method', method, parameters)
       return api(method, parameters, self.options.token)
     }
 
@@ -138,7 +138,7 @@ class Bot extends EventEmitter {
           debugLog('Dictionary triggered')
           messageObject.answer(closest.request(messageObject.text).answer)
         } else {
-          debugLog(`Emitting "${update[5].toLowerCase()}":`,messageObject)
+          debugLog(`Emitting "${update[5].toLowerCase()}":`, messageObject)
           this.emit(update[5].toLowerCase(), messageObject)
         }
       }
@@ -210,6 +210,5 @@ class Bot extends EventEmitter {
     }
   }
 }
-
 
 module.exports = Bot

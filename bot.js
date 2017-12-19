@@ -137,13 +137,13 @@ class Bot extends EventEmitter {
       var next = () => {
         if (this.options.botname && messageObject.text.toLowerCase().startsWith(this.options.botname.toLowerCase()) && update[2] & 16) {
           var text = update[5].toLowerCase().substring(this.options.botname.length, update[5].length).replace(/^./, '').trim()
+          messageObject.text = update[5].substring(this.options.botname.length, update[5].length).replace(/^./, '').trim()
           debugLog(`Botname triggered, emitting "${text}":`, messageObject)
-          messageObject.text = update[5].substring(this.options.botname.length, update[5].length).trim()
           this.emit(text, messageObject)
         } else if (this.isDictSet && closest.request(messageObject.text).answer !== 'nomatch') {
           debugLog('Dictionary triggered')
           messageObject.answer(closest.request(messageObject.text).answer)
-        } else {
+        } else if (!this.options.botname) {
           debugLog(`Emitting "${update[5].toLowerCase()}":`, messageObject)
           this.emit(update[5].toLowerCase(), messageObject)
         }

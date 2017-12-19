@@ -135,17 +135,14 @@ class Bot extends EventEmitter {
 
     var parser = async (update) => {
       var next = () => {
-        if (this.options.botname && messageObject.text.toLowerCase().startsWith(this.options.botname.toLowerCase()) && update[2] & 16) {
-          var text = update[5].toLowerCase().substring(this.options.botname.length, update[5].length).replace(/^./, '').trim()
-          messageObject.text = update[5].substring(this.options.botname.length, update[5].length).replace(/^./, '').trim()
-          debugLog(`Botname triggered, emitting "${text}":`, messageObject)
-          this.emit(text, messageObject)
-        } else if (this.isDictSet && closest.request(messageObject.text).answer !== 'nomatch') {
+        var text = (this.options.botname && messageObject.from.id !== messageObject.peerId) ? messageObject.text.substring(this.options.botname.length, update[5].length).replace(/^\W/, '').trim() : messageObject.text
+        debugLog(`Processing text: "${text}"`)
+        if (this.isDictSet && closest.request(text).answer !== 'nomatch') {
           debugLog('Dictionary triggered')
-          messageObject.answer(closest.request(messageObject.text).answer)
-        } else if (!this.options.botname) {
-          debugLog(`Emitting "${update[5].toLowerCase()}":`, messageObject)
-          this.emit(update[5].toLowerCase(), messageObject)
+          messageObject.answer(closest.request(text).answer)
+        } else {
+          debugLog(`Emitting "${text.toLowerCase()}":`, messageObject)
+          this.emit(text.toLowerCase(), messageObject)
         }
       }
 
@@ -193,7 +190,7 @@ class Bot extends EventEmitter {
               peer_id: update[3],
               message: text,
               attachment: attachment.join(','),
-              forward_messages: forward ? update[1] : undefined
+              forward_messages: forward ? update[6].fwd : undefined
             }, this.options.token)
           },
           /**
@@ -208,7 +205,9 @@ class Bot extends EventEmitter {
 
         if (this.useCallback) {
           debugLog('Passing messageObject to use()')
-          this.useCallback(messageObject, next)
+          this.useCallback(messageObject, function () {
+            if (!(update[2] & 2)) next()
+          })
         } else if (!(update[2] & 2)) {
           next()
         }

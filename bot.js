@@ -20,6 +20,7 @@ class Bot extends EventEmitter {
   constructor (options) {
     super()
     this.upload = uploader
+    this.longPoll = new EventEmitter()
     if (typeof options === 'object') {
       this.options = {
         botname: options.botname || undefined,
@@ -211,6 +212,8 @@ class Bot extends EventEmitter {
         } else if (!(update[2] & 2)) {
           next()
         }
+      } else {
+        this.longPoll.emit(update[0], update.splice(0, 1))
       }
     }
   }

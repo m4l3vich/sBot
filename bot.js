@@ -101,12 +101,30 @@ class Bot extends EventEmitter {
       self.me = await getMe(self.options.token)
       uploader.mode = self.me.mode
 
-      async function loop (ts) {
+      var loop = async (ts) => {
         var longpollResponse = await rp(`https://${longpollParams.server}?act=a_check&key=${longpollParams.key}&ts=${ts}&wait=25&mode=10&version=2`)
         debugLog('Got LongPoll response:', longpollResponse)
         longpollResponse = JSON.parse(longpollResponse)
-        longpollResponse.updates.map(parser)
-        loop(longpollResponse.ts)
+        if (longpollResponse.failed) {
+          switch (longpollResponse.failed) {
+            case 1:
+              loop(longpollResponse.ts)
+              break
+            case 2:
+              longpollParams = await api('messages.getLongPollServer', {lp_version: 2}, self.options.token)
+              loop(longpollParams.ts)
+              break
+            case 3:
+              longpollParams = await api('messages.getLongPollServer', {lp_version: 2}, self.options.token)
+              loop(longpollParams.ts)
+              break
+            case 4:
+              throw new Error('LongPoll error: Wrong lp_version. Please report this on GitHub.')
+          }
+        } else {
+          longpollResponse.updates.map(parser)
+          loop(longpollResponse.ts)
+        }
       }
       debugLog('Beginning LongPoll loop')
       loop(longpollParams.ts)

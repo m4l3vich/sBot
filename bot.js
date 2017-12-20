@@ -157,6 +157,7 @@ class Bot extends EventEmitter {
         }
         var attachments = []
         if (update[6]) {
+          debugLog(`Additional object:`, update[6])
           for (var i = 1; i < 11; i++) {
             if (update[6]['attach' + i]) {
               attachments.push({
@@ -171,6 +172,7 @@ class Bot extends EventEmitter {
         var messageObject = {
           messageId: update[1],
           peerId: update[3],
+          longpollObject: update[6] || undefined,
           text: update[5],
           from: user,
           isOut: Boolean(update[2] & 2),

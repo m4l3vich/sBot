@@ -140,6 +140,7 @@ b.on(/^передай \[id(.+)\|(.+)] (.+)$/, message => {
 {
    messageId: 171,
    peerId: 193158046,
+   longpollObject: {},
    text: 'hello sBot',
    from: { id: 193158046, first_name: 'Евгений', last_name: 'Малевич' },
    isOut: false,
@@ -150,6 +151,7 @@ b.on(/^передай \[id(.+)\|(.+)] (.+)$/, message => {
 ```
 - **messageId** - ID сообщения
 - **peerId** - ID отправителя (может быть ID пользователя, группы или беседы)
+- **longpollObject** - [Дополнительный объект, отправляемый LongPoll](https://vk.com/dev/using_longpoll_2?f=6.%20%D0%92%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D1%8F)
 - **text** - Текст сообщения
 - **from** - Объект пользователя-отправителя
 - **isOut** - Исходящее ли сообщение?

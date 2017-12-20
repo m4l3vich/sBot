@@ -114,7 +114,7 @@ class Bot extends EventEmitter {
 
     this.api = (method, parameters) => {
       debugLog('Executing API method', method, parameters)
-      return api(method, parameters, self.options.token)
+      return api(method, parameters || {}, self.options.token)
     }
 
     var getMe = async (token) => {

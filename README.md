@@ -1,5 +1,5 @@
 # sBot
-![sBot 3.0 Terbium](https://i.imgur.com/VHl5aZR.jpg)
+![sBot 3.4 Dysprosium](https://i.imgur.com/VJhzfZV.jpg)
 
 ## Установка
 Установите sBot с помощью NPM:

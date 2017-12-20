@@ -55,8 +55,22 @@ b.use((message, next) => {
 ```
 Здесь middleware используется как фильтр слова "дурак" во входящих сообщениях
 
-- **message** - Объект с обрабатываемым сообщением
+```JavaScript
+b.use(callback)
+```
+
+- **callback** - Функция для обработки каждого сообщения, передает аргументы:
+
+- **message** - Обрабатываемое сообщение, object
 - **next** - Функция, при выполнении которой обработка сообщения пойдет далее _(будет вызвано событие с этим сообщением и сообщение будет протестировано словарем)_
+
+### Вызов методов VKAPI
+```JavaScript
+b.api(method, [parameters])
+```
+- **method** - Название метода, string
+- **parameters** - Параметры метода, object
+Возвращает Promise с объектом, содержащим ответ от VKAPI
 
 ### Отправка медиа (прикрепления)
 ```JavaScript
@@ -73,21 +87,24 @@ b.on('отправь фото', (message) => {
 ```JavaScript
 bot.upload.photo(buffer)
 ```
-- **buffer** - [Буфер](https://nodejs.org/api/buffer.html), содержащий фотографию
+- **buffer** - Фотография, [buffer](https://nodejs.org/api/buffer.html)
+Возвращает Promise со строкой, содержащим готовое к отправке прикрепление (в формате `photo1234_5678`)
 
 #### Отправка голосовых сообщений:
 ```JavaScript
 bot.upload.audio_message(buffer, [peer_id])
 ```
-- **buffer** - [Буфер](https://nodejs.org/api/buffer.html), содержащий голосовое сообщение   
-- **peer_id** - ID, на который затем будет отправлено голосовое сообщение **ТОЛЬКО ДЛЯ ГРУПП**
+- **buffer** - Голосовое сообщение, [buffer](https://nodejs.org/api/buffer.html)
+- **peer_id** - ID, на который затем будет отправлено голосовое сообщение, number **ТОЛЬКО ДЛЯ ГРУПП**
+Возвращает Promise со строкой, содержащим готовое к отправке прикрепление (в формате `doc1234_5678`)
 
 #### Отправка граффити:
 ```JavaScript
 bot.upload.graffiti(buffer)
 ```
-- **buffer** - [Буфер](https://nodejs.org/api/buffer.html), содержащий граффити   
+- **buffer** - Граффити, [buffer](https://nodejs.org/api/buffer.html)
 **НЕ РАБОТАЕТ В ГРУППАХ**
+Возвращает Promise со строкой, содержащим готовое к отправке прикрепление (в формате `doc8765_4321`)
 
 ### Использование бота в группе
 sBot может работать в группе без дополнительных настроек:
@@ -134,12 +151,19 @@ b.on(/^передай \[id(.+)\|(.+)] (.+)$/, message => {
 })
 ```
 
+```JavaScript
+b.on(message, callback)
+```
+- **message** - Текст сообщения, которое необходимо обработать, string или regexp
+- **callback** - Функция для обработки сообщения
+
 ### Дополнительно
 ##### Строение объекта message:
 ```JavaScript
 {
    messageId: 171,
    peerId: 193158046,
+   longpollObject: {},
    text: 'hello sBot',
    from: { id: 193158046, first_name: 'Евгений', last_name: 'Малевич' },
    isOut: false,
@@ -148,22 +172,23 @@ b.on(/^передай \[id(.+)\|(.+)] (.+)$/, message => {
    sticker: [Function: sticker]
  }
 ```
-- **messageId** - ID сообщения
-- **peerId** - ID отправителя (может быть ID пользователя, группы или беседы)
-- **text** - Текст сообщения
-- **from** - Объект пользователя-отправителя
-- **isOut** - Исходящее ли сообщение?
-- **attaches** - Массив с прикреплениями
+- **messageId** - ID сообщения, number
+- **peerId** - ID отправителя (может быть ID пользователя, группы или беседы), number
+- **longpollObject** - [Дополнительный объект, отправляемый LongPoll](https://vk.com/dev/using_longpoll_2?f=6.%20%D0%92%D0%BB%D0%BE%D0%B6%D0%B5%D0%BD%D0%B8%D1%8F), object
+- **text** - Текст сообщения, string
+- **from** - Информация об отправителе сообщения, object
+- **isOut** - True, если сообщение было исходящим, boolean
+- **attaches** - Прикрепления, array
 - **answer** - Функция для ответа текстом и прикреплениями
 - **sticker** - Функция для ответа стикером
 
 ##### Функция message.answer()
 ```JavaScript
-message.answer(text, <attach>, <forward>)
+message.answer(text, [attach], [forward])
 ```
-- **text** - Текст отправляемого сообщения
+- **text** - Текст отправляемого сообщения, string
 - **attach** - Массив или строка с прикреплениями (напр. `['photo1234_5678', 'photo8765_4321']`)
-- **forward** - Если true, то обрабатываемое сообщение будет переслано
+- **forward** - Если true, то обрабатываемое сообщение будет переслано, boolean
 
 ##### Функция message.sticker()
 ```JavaScript

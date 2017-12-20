@@ -4,11 +4,11 @@ var uploader = require('./uploader')
 var EventEmitter = require('pattern-emitter')
 var closest = require('closest-str')
 
-function debugLog() {
-  if(process.isDebugging) {
+function debugLog () {
+  if (process.isDebugging) {
     var args = Array.from(arguments)
     args.unshift(`[DEBUG]`)
-    console.log.apply(console,args)
+    console.log.apply(console, args)
   }
 }
 
@@ -20,12 +20,17 @@ class Bot extends EventEmitter {
   constructor (options) {
     super()
     this.upload = uploader
+    this.longPoll = new EventEmitter()
     if (typeof options === 'object') {
-      this.options = options
+      this.options = {
+        botname: options.botname || undefined,
+        token: options.token,
+        debug: options.debug || false
+      }
       uploader.token = options.token
     } else if (typeof options === 'string') {
       this.options = {
-        botname: '',
+        botname: undefined,
         token: options,
         debug: false
       }
@@ -83,7 +88,7 @@ class Bot extends EventEmitter {
       if (Array.isArray(attach)) attachment = attach
       else attachment[0] = attach
 
-      debugLog('Sending message',id,text,attachment)
+      debugLog('Sending message', id, text, attachment)
       api('messages.send', {peer_id: id, message: text, attachment: attachment.join(',')}, self.options.token)
     }
 
@@ -96,20 +101,38 @@ class Bot extends EventEmitter {
       self.me = await getMe(self.options.token)
       uploader.mode = self.me.mode
 
-      async function loop (ts) {
+      var loop = async (ts) => {
         var longpollResponse = await rp(`https://${longpollParams.server}?act=a_check&key=${longpollParams.key}&ts=${ts}&wait=25&mode=10&version=2`)
         debugLog('Got LongPoll response:', longpollResponse)
         longpollResponse = JSON.parse(longpollResponse)
-        longpollResponse.updates.map(parser)
-        loop(longpollResponse.ts)
+        if (longpollResponse.failed) {
+          switch (longpollResponse.failed) {
+            case 1:
+              loop(longpollResponse.ts)
+              break
+            case 2:
+              longpollParams = await api('messages.getLongPollServer', {lp_version: 2}, self.options.token)
+              loop(longpollParams.ts)
+              break
+            case 3:
+              longpollParams = await api('messages.getLongPollServer', {lp_version: 2}, self.options.token)
+              loop(longpollParams.ts)
+              break
+            case 4:
+              throw new Error('LongPoll error: Wrong lp_version. Please report this on GitHub.')
+          }
+        } else {
+          longpollResponse.updates.map(parser)
+          loop(longpollResponse.ts)
+        }
       }
       debugLog('Beginning LongPoll loop')
       loop(longpollParams.ts)
     }
 
     this.api = (method, parameters) => {
-      debugLog('Executing API method',method, parameters)
-      return api(method, parameters, self.options.token)
+      debugLog('Executing API method', method, parameters)
+      return api(method, parameters || {}, self.options.token)
     }
 
     var getMe = async (token) => {
@@ -131,15 +154,14 @@ class Bot extends EventEmitter {
 
     var parser = async (update) => {
       var next = () => {
-        if (this.options.botname && messageObject.text.startsWith(this.options.botname) && update[2] & 16) {
-          debugLog('Botname triggered')
-          this.emit(update[5].toLowerCase(), messageObject)
-        } else if (this.isDictSet && closest.request(messageObject.text).answer !== 'nomatch') {
+        var text = (this.options.botname && messageObject.from.id !== messageObject.peerId) ? messageObject.text.substring(this.options.botname.length, update[5].length).replace(/^\W/, '').trim() : messageObject.text
+        debugLog(`Processing text: "${text}"`)
+        if (this.isDictSet && closest.request(text).answer !== 'nomatch') {
           debugLog('Dictionary triggered')
-          messageObject.answer(closest.request(messageObject.text).answer)
+          messageObject.answer(closest.request(text).answer)
         } else {
-          debugLog(`Emitting "${update[5].toLowerCase()}":`,messageObject)
-          this.emit(update[5].toLowerCase(), messageObject)
+          debugLog(`Emitting "${text.toLowerCase()}":`, messageObject)
+          this.emit(text.toLowerCase(), messageObject)
         }
       }
 
@@ -153,6 +175,7 @@ class Bot extends EventEmitter {
         }
         var attachments = []
         if (update[6]) {
+          debugLog(`Additional object:`, update[6])
           for (var i = 1; i < 11; i++) {
             if (update[6]['attach' + i]) {
               attachments.push({
@@ -167,6 +190,7 @@ class Bot extends EventEmitter {
         var messageObject = {
           messageId: update[1],
           peerId: update[3],
+          longpollObject: update[6] || undefined,
           text: update[5],
           from: user,
           isOut: Boolean(update[2] & 2),
@@ -202,14 +226,17 @@ class Bot extends EventEmitter {
 
         if (this.useCallback) {
           debugLog('Passing messageObject to use()')
-          this.useCallback(messageObject, next)
+          this.useCallback(messageObject, function () {
+            if (!(update[2] & 2)) next()
+          })
         } else if (!(update[2] & 2)) {
           next()
         }
+      } else {
+        this.longPoll.emit(update[0], update.splice(0, 1))
       }
     }
   }
 }
-
 
 module.exports = Bot

@@ -9,7 +9,7 @@ _Работает на Node.js 8.x и выше_
 ## Примеры использования
 
 ### Инициализация бота
-```JavaScript
+```js
 var Bot = require('sbot-vk')
 
 var b = new Bot('access_token')
@@ -22,7 +22,7 @@ b.start() // Запуск бота
 ```
 
 ### Использование словаря
-```JavaScript
+```js
 b.setDict({ // Установить "словарь" для автоответчика и процент совпадения строки
   'привет': 'Здравствуй!'
 }, 0.65)
@@ -31,7 +31,7 @@ b.setDict({ // Установить "словарь" для автоответч
 Например, бот будет отвечать на "пирвет" ровно также, как и на "привет", если установлен процент совпадения 0.65
 
 ### Использование middleware
-```JavaScript
+```js
 b.use((message, next) => {
   // Эта функция будет выполняться для каждого входящего сообщения
   console.log(`[${message.from.first_name} ${message.from.last_name} (${message.from.id})] ${message.isOut ? '<=' : '=>'} ${message.text}`)
@@ -42,7 +42,7 @@ b.use((message, next) => {
 ```
 В этом примере middleware - простой логгер, который выводит информацию о входящих сообщениях в консоль.
 
-```JavaScript
+```js
 b.use((message, next) => {
   if(!message.isOut && /дурак/gi.test(message.text)) {
     console.log(`${message.from.first_name} ${message.from.last_name} ругается!`)
@@ -55,7 +55,7 @@ b.use((message, next) => {
 ```
 Здесь middleware используется как фильтр слова "дурак" во входящих сообщениях
 
-```JavaScript
+```js
 b.use(callback)
 ```
 
@@ -65,7 +65,7 @@ b.use(callback)
 - **next** - Функция, при выполнении которой обработка сообщения пойдет далее _(будет вызвано событие с этим сообщением и сообщение будет протестировано словарем)_
 
 ### Вызов методов VKAPI
-```JavaScript
+```js
 b.api(method, [parameters])
 ```
 - **method** - Название метода, string
@@ -73,7 +73,7 @@ b.api(method, [parameters])
 Возвращает Promise с объектом, содержащим ответ от VKAPI
 
 ### Отправка медиа (прикрепления)
-```JavaScript
+```js
 b.on('отправь фото', (message) => {
   var photo = await b.upload.photo(Buffer)
   // Buffer - файл фотографии
@@ -84,14 +84,14 @@ b.on('отправь фото', (message) => {
 В данном примере бот отправляет в ответ фотографию.
 
 #### Отправка фото:
-```JavaScript
+```js
 bot.upload.photo(buffer)
 ```
 - **buffer** - Фотография, [buffer](https://nodejs.org/api/buffer.html)
 Возвращает Promise со строкой, содержащим готовое к отправке прикрепление (в формате `photo1234_5678`)
 
 #### Отправка голосовых сообщений:
-```JavaScript
+```js
 bot.upload.audio_message(buffer, [peer_id])
 ```
 - **buffer** - Голосовое сообщение, [buffer](https://nodejs.org/api/buffer.html)
@@ -99,7 +99,7 @@ bot.upload.audio_message(buffer, [peer_id])
 Возвращает Promise со строкой, содержащим готовое к отправке прикрепление (в формате `doc1234_5678`)
 
 #### Отправка граффити:
-```JavaScript
+```js
 bot.upload.graffiti(buffer)
 ```
 - **buffer** - Граффити, [buffer](https://nodejs.org/api/buffer.html)
@@ -108,7 +108,7 @@ bot.upload.graffiti(buffer)
 
 ### Использование бота в группе
 sBot может работать в группе без дополнительных настроек:
-```JavaScript
+```js
 var Bot = require('sbot-vk')
 var b = new Bot('group_token') // Указываем токен группы
 
@@ -121,14 +121,14 @@ b.start().then(() => {
 
 ### Использование событий
 ##### Простой пример с использованием bot.getMe()
-```JavaScript
+```js
 b.on('как тебя зовут', message => {
   message.answer(`Меня зовут ${b.getMe().first_name} ${b.getMe().last_name}`)
 })
 ```
 
 ##### Использование регулярных выражений в событиях (здесь - для получения аргументов команды)
-```JavaScript
+```js
 b.on(/^sqrt (.+)$/, (message) => {
   var number = message.text.match(/^sqrt (.+)$/)
   // number = ['sqrt 144', '144']
@@ -142,7 +142,7 @@ b.on(/^sqrt (.+)$/, (message) => {
 
 
 ##### Использование метода bot.sendMessage() для отправки сообщения другому пользователю
-```JavaScript
+```js
 b.on(/^передай \[id(.+)\|(.+)] (.+)$/, message => {
   var str = message.text.match(/^передай \[id(.+)\|(.+)] (.+)$/)
   // str = ['передай [id1|Павел Дуров] что он дурак', '1', 'Павел Дуров', 'что он дурак']
@@ -151,7 +151,7 @@ b.on(/^передай \[id(.+)\|(.+)] (.+)$/, message => {
 })
 ```
 
-```JavaScript
+```js
 b.on(message, callback)
 ```
 - **message** - Текст сообщения, которое необходимо обработать, string или regexp
@@ -159,7 +159,7 @@ b.on(message, callback)
 
 ### Дополнительно
 ##### Строение объекта message:
-```JavaScript
+```js
 {
    messageId: 171,
    peerId: 193158046,
@@ -183,7 +183,7 @@ b.on(message, callback)
 - **sticker** - Функция для ответа стикером
 
 ##### Функция message.answer()
-```JavaScript
+```js
 message.answer(text, [attach], [forward])
 ```
 - **text** - Текст отправляемого сообщения, string
@@ -191,7 +191,7 @@ message.answer(text, [attach], [forward])
 - **forward** - Если true, то обрабатываемое сообщение будет переслано, boolean
 
 ##### Функция message.sticker()
-```JavaScript
+```js
 message.sticker(stickerId)
 ```
 - **stickerId** - ID отправялемого стикера

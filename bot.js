@@ -106,10 +106,16 @@ class Bot extends EventEmitter {
           var longpollResponse = await rp(`https://${longpollParams.server}?act=a_check&key=${longpollParams.key}&ts=${ts}&wait=25&mode=10&version=2`)
           debugLog('Got LongPoll response:', longpollResponse)
           longpollResponse = JSON.parse(longpollResponse)
-          longpollResponse.updates.map(parser)
-          loop(longpollResponse.ts)
+          if (longpollResponse.failed) {
+            throw new Error(JSON.stringify(longpollResponse))
+          } else {
+            longpollResponse.updates.map(parser)
+            loop(longpollResponse.ts)
+          }
         } catch (e) {
-          var errorObj = JSON.parse(e)
+          debugLog(`Caught error while getting LongPoll updates: ${e.message}`)
+          console.log(e)
+          var errorObj = JSON.parse(e.message)
           if (errorObj.failed) {
             switch (longpollResponse.failed) {
               case 1:

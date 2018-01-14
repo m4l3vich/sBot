@@ -1,6 +1,6 @@
 {
   "name": "sbot-vk",
-  "version": "3.4.9",
+  "version": "3.5.9",
   "description": "Легкий и функциональный бот для ВКонтакте",
   "main": "bot.js",
   "scripts": {
@@ -18,7 +18,6 @@
   "homepage": "https://github.com/m4l3vich/sBot#readme",
   "dependencies": {
     "closest-str": "^2.2.1",
-    "pattern-emitter": "^1.0.0",
     "request": "^2.83.0",
     "request-promise": "^4.2.2"
   }

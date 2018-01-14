@@ -2,7 +2,9 @@ Thumbs.db
 ehthumbs.db
 Desktop.ini
 npm-debug.log
-node_modules/
+node_modules/*
+!node_modules/redbat
+node_modules/redbat/node_modules/*
 index.js
 cache.json
 $RECYCLE.BIN/

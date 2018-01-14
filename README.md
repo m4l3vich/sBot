@@ -1,5 +1,7 @@
 # sBot
-![sBot 3.4 Dysprosium](https://i.imgur.com/VJhzfZV.jpg)
+![sBot 3.5 Holmium](https://i.imgur.com/pN6fYbD.jpg)
+
+[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
 ## Установка
 Установите sBot с помощью NPM:
@@ -32,9 +34,9 @@ b.setDict({ // Установить "словарь" для автоответч
 
 ### Использование middleware
 ```js
-b.use((message, next) => {
+b.use((text, message, next) => {
   // Эта функция будет выполняться для каждого входящего сообщения
-  console.log(`[${message.from.first_name} ${message.from.last_name} (${message.from.id})] ${message.isOut ? '<=' : '=>'} ${message.text}`)
+  console.log(`[${message[0].from.first_name} ${message[0].from.last_name} (${message[0].from.id})] ${message[0].isOut ? '<=' : '=>'} ${text}`)
   // [Евгений Малевич (193158046)] => привет
   // [Малевий Евгенич (408783076)] <= Здравствуй!
   next()
@@ -43,9 +45,9 @@ b.use((message, next) => {
 В этом примере middleware - простой логгер, который выводит информацию о входящих сообщениях в консоль.
 
 ```js
-b.use((message, next) => {
-  if(!message.isOut && /дурак/gi.test(message.text)) {
-    console.log(`${message.from.first_name} ${message.from.last_name} ругается!`)
+b.use((text, message, next) => {
+  if(!message[0].isOut && /дурак/gi.test(text)) {
+    console.log(`${message[0].from.first_name} ${message[0].from.last_name} ругается!`)
     // Евгений Малевич ругается!
     message.answer('Сам дурак!')
   } else {
@@ -61,7 +63,8 @@ b.use(callback)
 
 - **callback** - Функция для обработки каждого сообщения, передает аргументы:
 
-- **message** - Обрабатываемое сообщение, object
+- **text** - Текст обрабатываемого сообщения в нижнем регистре (в виде, в котором он передается событию), string
+- **message** - Array, содержащий объект с обрабатываемым сообщением (message[0])
 - **next** - Функция, при выполнении которой обработка сообщения пойдет далее _(будет вызвано событие с этим сообщением и сообщение будет протестировано словарем)_
 
 ### Вызов методов VKAPI
@@ -74,7 +77,7 @@ b.api(method, [parameters])
 
 ### Отправка медиа (прикрепления)
 ```js
-b.on('отправь фото', (message) => {
+b.on('отправь фото', async (message) => {
   var photo = await b.upload.photo(Buffer)
   // Buffer - файл фотографии
   // Получить из файла можно через fs.readFileSync()
@@ -157,6 +160,34 @@ b.on(message, callback)
 - **message** - Текст сообщения, которое необходимо обработать, string или regexp
 - **callback** - Функция для обработки сообщения
 
+### Использование пространства имён событий (namespace) longpoll
+Если Вам нужен дополнительный функционал, Вы можете напрямую получать события LongPoll, отличающиеся от нового сообщения (событие 4):
+```js
+b.namespace('longpoll').on(5, (update) => { // Событие, означающее редактирование сообщения (событие 5)
+  b.sendMessage(update[3], 'Кажется, кто-то только что отредактировал сообщение...')
+})
+```
+(Полный список событий LongPoll доступен [здесь](https://vk.com/dev/using_longpoll))
+
+Синтаксис:
+```js
+b.on(updateNumber, callback)
+```
+- **updateNumber** - Номер события, которое необходимо обработать, string или regexp
+- **callback** - Функция для обработки события (передаёт аргумент `update`, содержащий полный массив с информацией о событии)
+
+В пространстве имён longpoll также доступен middleware:
+```js
+b.namespace('longpoll').use((update, updatesArray, next) => {
+  console.log(`Получено событие #${update}: ${updatesArray}`)
+  // Получено событие #9: -353391492,1,1515861336
+  // Получено событие #8: -407371780,7,1515861744
+})
+```
+- **update** - Номер типа обрабатываемого события (все события, кроме 4)
+- **updatesArray** - Array, содержащий обрабатываемое событие (без номера события)
+- **next** - Функция, при выполнении которой обработка события пойдет далее
+
 ### Дополнительно
 ##### Строение объекта message:
 ```js
@@ -183,6 +214,7 @@ b.on(message, callback)
 - **sticker** - Функция для ответа стикером
 
 ##### Функция message.answer()
+Используется для ответа на сообщение
 ```js
 message.answer(text, [attach], [forward])
 ```
@@ -191,6 +223,7 @@ message.answer(text, [attach], [forward])
 - **forward** - Если true, то обрабатываемое сообщение будет переслано, boolean
 
 ##### Функция message.sticker()
+Используется для ответа стикером
 ```js
 message.sticker(stickerId)
 ```

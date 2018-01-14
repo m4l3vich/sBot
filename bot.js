@@ -1,7 +1,7 @@
 var rp = require('request-promise')
 var api = require('./api')
 var uploader = require('./uploader')
-var EventEmitter = require('pattern-emitter')
+var EventEmitter = require('redbat').EventEmitter
 var closest = require('closest-str')
 
 function debugLog () {
@@ -42,17 +42,6 @@ class Bot extends EventEmitter {
     process.isDebugging = this.options.debug
 
     var self = this
-    /**
-    * Set callback, that will be applied to every new message
-    * @param {Function} callback - Function that will be executed
-    */
-    this.use = (callback) => {
-      if (typeof callback === 'function') {
-        this.useCallback = callback
-      } else {
-        throw new Error('Invalid callback')
-      }
-    }
     /**
     * Returns current VK user
     * @return {Object} - User object (id, first_name, last_name)
@@ -164,18 +153,6 @@ class Bot extends EventEmitter {
     }
 
     var parser = async (update) => {
-      var next = () => {
-        var text = (this.options.botname && messageObject.from.id !== messageObject.peerId) ? messageObject.text.substring(this.options.botname.length, update[5].length).replace(/^\W/, '').trim() : messageObject.text
-        debugLog(`Processing text: "${text}"`)
-        if (this.isDictSet && closest.request(text).answer !== 'nomatch') {
-          debugLog('Dictionary triggered')
-          messageObject.answer(closest.request(text).answer)
-        } else {
-          debugLog(`Emitting "${text.toLowerCase()}":`, messageObject)
-          this.emit(text.toLowerCase(), messageObject)
-        }
-      }
-
       if (update[0] === 4) {
         var user
         if (update[2] & 2) {
@@ -235,16 +212,17 @@ class Bot extends EventEmitter {
           }
         }
 
-        if (this.useCallback) {
-          debugLog('Passing messageObject to use()')
-          this.useCallback(messageObject, function () {
-            if (!(update[2] & 2)) next()
-          })
-        } else if (!(update[2] & 2)) {
-          next()
+        var text = (this.options.botname && messageObject.from.id !== messageObject.peerId) ? messageObject.text.substring(this.options.botname.length, update[5].length).replace(/^\W/, '').trim() : messageObject.text
+        debugLog(`Processing text: "${text}"`)
+        if (this.isDictSet && closest.request(text).answer !== 'nomatch') {
+          debugLog('Dictionary triggered')
+          messageObject.answer(closest.request(text).answer)
+        } else {
+          debugLog(`Emitting "${text.toLowerCase()}":`, messageObject)
+          this.emit(text.toLowerCase(), messageObject)
         }
       } else {
-        this.longPoll.emit(update[0], update.splice(0, 1))
+        this.namespace('longpoll').emit.apply(this, update)
       }
     }
   }

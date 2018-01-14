@@ -1,5 +1,5 @@
 # sBot
-![sBot 3.4 Dysprosium](https://i.imgur.com/VJhzfZV.jpg)
+![sBot 3.5 Holmium](https://i.imgur.com/pN6fYbD.jpg)
 
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 

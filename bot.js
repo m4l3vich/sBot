@@ -158,7 +158,7 @@ class Bot extends EventEmitter {
         if (update[2] & 2) {
           user = this.me
         } else {
-          var u = await api('users.get', {user_ids: update[6].from || update[3]})
+          var u = await api('users.get', {user_ids: update[6].from || update[3]}, self.options.token)
           user = u[0]
         }
         var attachments = []
